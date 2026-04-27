@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+# lake++ -- Lean++ wrapper around `lake`.
+#
+# Adds a few Lean++-specific subcommands (build, trust, ci, proof-cache, ...)
+# and forwards anything else to the real `lake`.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Locate executables
+# ---------------------------------------------------------------------------
+
+# The directory containing this script (resolving symlinks).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+LEANPP_BIN="$SCRIPT_DIR/leanpp"
+
+find_lake() {
+  # 1) sibling under .. (rare in MVP but cheap)
+  if [ -x "$SCRIPT_DIR/../../lake" ]; then
+    echo "$SCRIPT_DIR/../../lake"; return 0
+  fi
+  # 2) PATH
+  if command -v lake >/dev/null 2>&1; then
+    command -v lake; return 0
+  fi
+  # 3) elan default
+  if [ -x "/Users/naoki/.elan/bin/lake" ]; then
+    echo "/Users/naoki/.elan/bin/lake"; return 0
+  fi
+  return 1
+}
+
+# Run real lake or print a friendly error.
+run_lake() {
+  if LAKE_BIN="$(find_lake)"; then
+    exec "$LAKE_BIN" "$@"
+  else
+    echo "lake++: error: could not locate \`lake\`. Install Lean 4 (e.g. via elan)." >&2
+    exit 127
+  fi
+}
+
+usage() {
+  cat <<'EOF'
+lake++ -- Lean++ wrapper around lake.
+
+Lean++-specific subcommands:
+  build                       leanpp transpile-all + lake build
+  trust                       Print the trust ledger (delegates to leanpp trust)
+  ci --safe-profile           Build, then trust; non-zero exit on sorry/unsafe
+  proof-cache <get|put|clear> [stub] proof-cache (Phase 2)
+  minimize-imports            [stub] minimize import lists
+  explain-broken-proof FILE   [stub] hint at a broken proof
+  theorem-index update        [stub] rebuild the theorem index
+
+Anything else is forwarded to `lake`. Use `lake++ help` for this message,
+`lake++ --help` to forward to lake's own help.
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+
+if [ "$#" -eq 0 ]; then
+  usage
+  exit 0
+fi
+
+cmd="$1"; shift || true
+
+case "$cmd" in
+  help|-h)
+    usage
+    ;;
+
+  build)
+    if [ ! -x "$LEANPP_BIN" ]; then
+      echo "lake++ build: error: $LEANPP_BIN not found or not executable" >&2
+      exit 1
+    fi
+    "$LEANPP_BIN" transpile-all
+    run_lake build "$@"
+    ;;
+
+  trust)
+    if [ ! -x "$LEANPP_BIN" ]; then
+      echo "lake++ trust: error: $LEANPP_BIN not found or not executable" >&2
+      exit 1
+    fi
+    exec "$LEANPP_BIN" trust "$@"
+    ;;
+
+  ci)
+    safe=0
+    for arg in "$@"; do
+      if [ "$arg" = "--safe-profile" ]; then
+        safe=1
+      fi
+    done
+    if [ ! -x "$LEANPP_BIN" ]; then
+      echo "lake++ ci: error: $LEANPP_BIN not found" >&2
+      exit 1
+    fi
+    "$LEANPP_BIN" transpile-all
+    if LAKE_BIN="$(find_lake)"; then
+      "$LAKE_BIN" build || exit $?
+    else
+      echo "lake++ ci: error: lake not found" >&2
+      exit 127
+    fi
+    out="$("$LEANPP_BIN" trust)"
+    echo "$out"
+    if [ "$safe" -eq 1 ]; then
+      sorry_count=$(echo "$out" | awk -F: '/^[[:space:]]+sorry:/ {gsub(/[[:space:]]/,"",$2); print $2}')
+      unsafe_count=$(echo "$out" | awk -F: '/^[[:space:]]+unsafe:/ {gsub(/[[:space:]]/,"",$2); print $2}')
+      sorry_count=${sorry_count:-0}
+      unsafe_count=${unsafe_count:-0}
+      if [ "$sorry_count" != "0" ] || [ "$unsafe_count" != "0" ]; then
+        echo "lake++ ci: --safe-profile failed (sorry=$sorry_count, unsafe=$unsafe_count)" >&2
+        exit 1
+      fi
+    fi
+    ;;
+
+  proof-cache)
+    echo "[lake++] proof-cache: not implemented in MVP, planned for Phase 2"
+    ;;
+
+  minimize-imports)
+    echo "[lake++] minimize-imports: not implemented in MVP, planned for Phase 2"
+    ;;
+
+  explain-broken-proof)
+    echo "[lake++] explain-broken-proof: not implemented in MVP, planned for Phase 2"
+    ;;
+
+  theorem-index)
+    echo "[lake++] theorem-index: not implemented in MVP, planned for Phase 2"
+    ;;
+
+  *)
+    # Forward to real lake
+    run_lake "$cmd" "$@"
+    ;;
+esac

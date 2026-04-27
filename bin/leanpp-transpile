@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""leanpp-transpile: lower a .leanpp file to a .lean file.
+
+The transpiler is deliberately small. Heavy lifting is done by Lean macros
+defined in the LeanPP stdlib. This script:
+
+  1. Prepends a source-map comment.
+  2. Injects `import LeanPP` / `open LeanPP` if not already present.
+  3. Bridges the rich `spec def ... by implementation BODY proof PROOF` surface
+     into the stdlib's simpler `spec def ... := BODY` form, and wraps bare
+     `ensures EXPR` (using the magic `result` variable) into `ensures fun
+     result => EXPR` to match the stdlib macro's term-shaped postcondition.
+  4. Passes everything else through verbatim. `concept`, `law`, `refines`,
+     `obligation`, `proofplan`, `#profile`, `#trust`, `#obligations` are
+     handled by the LeanPP stdlib's macros / commands.
+
+Phase 2 plan: extend the LeanPP.Spec macro to natively accept the rich
+`by implementation ... proof ...` form, so the transpiler can drop these
+desugarings and become a pure header-injector again.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+
+SPEC_DEF_HEAD_RE = re.compile(r"^\s*spec\s+def\s+")
+CLAUSE_RE = re.compile(r"^(\s+)(requires|ensures|decreases|invariant)\s+(.+)$")
+ENSURES_RE = re.compile(r"^(\s+)ensures\s+(.+)$")
+BY_RE = re.compile(r"^\s*by\s*$")
+IMPL_RE = re.compile(r"^\s+implementation\s*$")
+PROOF_RE = re.compile(r"^\s+proof\s*$")
+ASSIGN_RE = re.compile(r"^\s*:=")
+
+
+def has_import_leanpp(text: str) -> bool:
+    for line in text.splitlines():
+        s = line.strip()
+        if not s or s.startswith("--"):
+            continue
+        if s.startswith("import "):
+            mod = s[len("import "):].split()[0] if s[len("import "):] else ""
+            if mod == "LeanPP" or mod.startswith("LeanPP."):
+                return True
+            continue
+        break
+    return False
+
+
+def wrap_bare_ensures(line: str) -> str:
+    """Wrap `ensures EXPR` (using `result` magic var) into `ensures fun result => EXPR`.
+    Leaves already-function postconditions (`fun ...` / `λ ...`) untouched."""
+    m = ENSURES_RE.match(line)
+    if not m:
+        return line
+    indent, expr = m.group(1), m.group(2).rstrip()
+    head = expr.lstrip()
+    if head.startswith("fun ") or head.startswith("fun(") or head.startswith("λ"):
+        return line
+    return f"{indent}ensures fun result => {expr}"
+
+
+def strip_common_indent(lines: list[str]) -> list[str]:
+    """Remove the smallest leading-whitespace prefix common to all non-blank lines."""
+    nonblank = [l for l in lines if l.strip()]
+    if not nonblank:
+        return lines
+    indents = [len(l) - len(l.lstrip(" ")) for l in nonblank]
+    common = min(indents)
+    if common == 0:
+        return lines
+    return [l[common:] if len(l) >= common else l for l in lines]
+
+
+def desugar_spec_blocks(lines: list[str]) -> list[str]:
+    """Find `spec def ... by implementation BODY proof PROOF` blocks and rewrite
+    them to `spec def ... := BODY`. Wrap bare ensures clauses. Pass through
+    `spec def ... := BODY` blocks unchanged (still wrapping ensures)."""
+    out: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        if not SPEC_DEF_HEAD_RE.match(line):
+            out.append(line)
+            i += 1
+            continue
+
+        # Found a `spec def` head line. Collect the head + clause lines.
+        # A clause may span multiple lines: continuation lines are *more*
+        # indented than the clause keyword (e.g. a multi-line `match` body).
+        head_lines: list[str] = [line]
+        j = i + 1
+        while j < n:
+            cm = CLAUSE_RE.match(lines[j])
+            if not cm:
+                break
+            head_lines.append(lines[j])
+            clause_indent = len(cm.group(1))
+            j += 1
+            # absorb continuation lines (strictly deeper indent, no blank-line break).
+            while j < n and lines[j].strip() != "":
+                nxt = lines[j]
+                nxt_indent = len(nxt) - len(nxt.lstrip(" "))
+                if nxt_indent <= clause_indent:
+                    break
+                if BY_RE.match(nxt) or ASSIGN_RE.match(nxt):
+                    break
+                head_lines.append(nxt)
+                j += 1
+
+        # Skip blank lines.
+        k = j
+        while k < n and lines[k].strip() == "":
+            k += 1
+
+        if k < n and BY_RE.match(lines[k]):
+            # Rich form: by / implementation / proof.
+            k += 1
+            while k < n and lines[k].strip() == "":
+                k += 1
+            if k < n and IMPL_RE.match(lines[k]):
+                k += 1
+                impl_body: list[str] = []
+                while k < n:
+                    if PROOF_RE.match(lines[k]):
+                        break
+                    if lines[k].strip() == "" or lines[k].startswith((" ", "\t")):
+                        impl_body.append(lines[k])
+                        k += 1
+                    else:
+                        break
+                # Optional proof block: parsed but discarded (stdlib auto-proves).
+                if k < n and PROOF_RE.match(lines[k]):
+                    k += 1
+                    while k < n:
+                        if lines[k].strip() == "" or lines[k].startswith((" ", "\t")):
+                            k += 1
+                        else:
+                            break
+                # Emit head with ensures wrapping.
+                for h in head_lines:
+                    out.append(wrap_bare_ensures(h))
+                # Emit `:= BODY`.
+                stripped_body = strip_common_indent(impl_body)
+                while stripped_body and stripped_body[0].strip() == "":
+                    stripped_body.pop(0)
+                while stripped_body and stripped_body[-1].strip() == "":
+                    stripped_body.pop()
+                if not stripped_body:
+                    out.append("  := sorry")
+                elif len(stripped_body) == 1:
+                    out.append(f"  := {stripped_body[0].strip()}")
+                else:
+                    out.append("  :=")
+                    for l in stripped_body:
+                        out.append(f"    {l}" if l.strip() else l)
+                i = k
+                continue
+
+        # Simple form (`:=` follows) or unrecognized — emit head with ensures
+        # wrapping, then continue from j (the line after the clause block).
+        for h in head_lines:
+            out.append(wrap_bare_ensures(h))
+        i = j
+    return out
+
+
+def transpile_text(src: str, src_filename: str) -> str:
+    out_lines: list[str] = [
+        f"-- Generated from {src_filename} by leanpp-transpile. Do not edit.",
+    ]
+    if not has_import_leanpp(src):
+        out_lines.append("import LeanPP")
+        out_lines.append("open LeanPP")
+        out_lines.append("")
+
+    src_lines = src.splitlines()
+    desugared = desugar_spec_blocks(src_lines)
+    out_lines.extend(desugared)
+
+    result = "\n".join(out_lines)
+    if not result.endswith("\n"):
+        result += "\n"
+    return result
+
+
+def transpile_file(in_path: Path, out_path: Path) -> None:
+    if not in_path.exists():
+        print(f"leanpp-transpile: error: {in_path} not found", file=sys.stderr)
+        sys.exit(1)
+    if in_path.suffix != ".leanpp":
+        print(
+            f"leanpp-transpile: warning: {in_path} does not end in .leanpp",
+            file=sys.stderr,
+        )
+    src = in_path.read_text(encoding="utf-8")
+    out = transpile_text(src, in_path.name)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(out, encoding="utf-8")
+
+
+def default_output_for(in_path: Path) -> Path:
+    # Use `.transpiled.lean` so generated artifacts match the `.gitignore`
+    # convention and don't shadow hand-written `.lean` reference files
+    # (e.g. `abs.expected.lean`) sitting next to a `.leanpp` source.
+    return in_path.with_suffix(".transpiled.lean")
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(
+        prog="leanpp-transpile",
+        description="Lower a .leanpp source file to a .lean source file.",
+    )
+    p.add_argument("input", help="Input .leanpp file")
+    p.add_argument(
+        "-o", "--output",
+        help="Output .lean file (default: same path with .lean extension)",
+    )
+    p.add_argument(
+        "--stdout", action="store_true",
+        help="Write transpiled output to stdout instead of a file",
+    )
+    args = p.parse_args(argv)
+
+    in_path = Path(args.input)
+    if args.stdout:
+        if not in_path.exists():
+            print(f"leanpp-transpile: error: {in_path} not found", file=sys.stderr)
+            return 1
+        sys.stdout.write(transpile_text(in_path.read_text(encoding="utf-8"), in_path.name))
+        return 0
+
+    out_path = Path(args.output) if args.output else default_output_for(in_path)
+    transpile_file(in_path, out_path)
+    print(f"leanpp-transpile: {in_path} -> {out_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

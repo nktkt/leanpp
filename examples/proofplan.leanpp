@@ -1,0 +1,30 @@
+-- Lean++ MVP example: declarative proof plans.
+-- Demonstrates: `proofplan ... strategy: ...` syntax and using a plan as a
+-- tactic in an ordinary theorem.
+--
+-- A `proofplan` desugars to a Lean macro that expands to a sequence of
+-- tactic combinators. Each `strategy:` step maps to a tactic:
+--   `normalize algebra`         -> ring_nf / push_cast / simp with arith lemmas
+--   `rewrite using [..]`        -> simp only [..]
+--   `close by simp`             -> simp; done
+-- Phase 2 will let users register custom strategies in the LeanPP stdlib.
+
+#profile safe
+
+proofplan group_normal
+  strategy:
+    normalize algebra
+    rewrite using [Int.add_assoc, Int.zero_add]
+    close by simp
+
+theorem demo (a b : Int) : a + 0 + b = a + b := by
+  group_normal
+
+-- A second plan, showing that strategies compose.
+proofplan arith_close
+  strategy:
+    normalize algebra
+    close by omega
+
+theorem demo₂ (x y : Int) : x + y - y = x := by
+  arith_close

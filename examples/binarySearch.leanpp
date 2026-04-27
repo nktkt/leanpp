@@ -1,0 +1,44 @@
+-- Lean++ MVP example: binary search over a sorted Array.
+-- Demonstrates: `Array` spec, `Option` result, `requires`, match-style `ensures`.
+--
+-- For MVP, the proof is left as an obligation; Phase 2 will close it via a
+-- `proofplan` that does the standard interval-halving argument.
+
+namespace LeanPP.Examples.BinarySearch
+
+-- Local stub: array is non-strictly ascending.
+def Array.SortedAsc (xs : Array Nat) : Prop :=
+  ∀ i j, i < j → j < xs.size → xs[i]! ≤ xs[j]!
+
+end LeanPP.Examples.BinarySearch
+
+open LeanPP.Examples.BinarySearch
+
+spec def binarySearch (xs : Array Nat) (target : Nat) : Option Nat
+  requires xs.SortedAsc
+  ensures  match result with
+           | some i => xs[i]! = target
+           | none   => ∀ j < xs.size, xs[j]! ≠ target
+by
+  implementation
+    let rec go (lo hi : Nat) : Option Nat :=
+      if h : lo < hi then
+        let mid := (lo + hi) / 2
+        let v   := xs[mid]!
+        if v = target then some mid
+        else if v < target then go (mid + 1) hi
+        else go lo mid
+      else none
+    termination_by hi - lo
+    go 0 xs.size
+
+  proof
+    -- Left as an obligation for Phase 2; the discharge requires loop-invariant
+    -- reasoning that the MVP `auto` portfolio cannot yet handle.
+    sorry
+
+obligation binarySearch_correct :
+    ∀ xs target, (xs : Array Nat).SortedAsc →
+      match binarySearch xs target with
+      | some i => xs[i]! = target
+      | none   => ∀ j < xs.size, xs[j]! ≠ target

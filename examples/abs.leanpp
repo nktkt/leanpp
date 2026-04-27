@@ -1,0 +1,13 @@
+-- Lean++ MVP example: |x| with verified non-negativity
+-- Demonstrates: spec def, ensures, auto
+
+#profile safe
+
+spec def abs (x : Int) : Nat
+  ensures result ≥ 0
+by
+  implementation
+    if x < 0 then Int.natAbs (-x) else Int.natAbs x
+
+  proof
+    auto

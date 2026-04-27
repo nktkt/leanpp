@@ -1,0 +1,44 @@
+-- Lean++ MVP example: a tiny verified parser for natural-number literals.
+-- Demonstrates: `Option` result, `obligation` for unsolved round-trip property,
+-- and `#obligations` to enumerate what is still open.
+
+namespace LeanPP.Examples.SimpleParser
+
+-- Single-digit decoder; returns none on a non-digit.
+def digitOf? (c : Char) : Option Nat :=
+  if '0' ≤ c ∧ c ≤ '9' then some (c.toNat - '0'.toNat) else none
+
+end LeanPP.Examples.SimpleParser
+
+open LeanPP.Examples.SimpleParser
+
+spec def parseNat (s : String) : Option Nat
+  ensures  ∀ n, result = some n → n.repr = s
+by
+  implementation
+    let cs := s.toList
+    if cs.isEmpty then none
+    else
+      cs.foldlM
+        (fun acc c =>
+          match digitOf? c with
+          | some d => some (acc * 10 + d)
+          | none   => none)
+        0
+
+  proof
+    -- The full round-trip property requires reasoning about Nat.repr,
+    -- which the MVP `auto` portfolio does not yet cover. We leave it as an
+    -- explicit obligation; Phase 2 will discharge via a proofplan that
+    -- inducts on the digit list.
+    sorry
+
+-- Round-trip is the headline correctness property.
+obligation parseNat_roundTrip :
+    ∀ s n, parseNat s = some n → n.repr = s
+
+-- Surjectivity: every Nat parses back from its repr.
+obligation parseNat_total :
+    ∀ n, parseNat (Nat.repr n) = some n
+
+#obligations

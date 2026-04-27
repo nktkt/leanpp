@@ -1,0 +1,30 @@
+-- Lean++ MVP example: trust ledger and unsolved obligations.
+-- Demonstrates: `#profile safe`, `obligation`, `#obligations`, `#trust`.
+--
+-- `#profile safe` forbids `sorry` in `spec def` proofs but still allows
+-- explicit `obligation` declarations (which are enumerated, not silently
+-- accepted). `#trust safeDiv` prints the provenance of the spec: which
+-- `ensures` clauses are proved, which axioms it depends on, and any
+-- outstanding obligations transitively reachable.
+
+#profile safe
+
+spec def safeDiv (n d : Nat) : Nat
+  requires d ≠ 0
+  ensures  result * d ≤ n
+by
+  implementation
+    n / d
+  proof
+    auto
+
+-- An explicit obligation: a small lemma that the divisor strictly shrinks
+-- the dividend. We mark it `sorry` so it shows up in `#obligations`.
+-- The `obligation` command auto-emits `:= by sorry`; do not write a body.
+obligation safeDiv_decreases : ∀ n d, d ≠ 0 → n - d < n + 1
+
+-- Diagnostics --------------------------------------------------------------
+
+#obligations         -- enumerate every unsolved obligation in this file
+#trust               -- print a project-wide trust ledger snapshot
+#trust safeDiv       -- print a focused ledger entry for one declaration

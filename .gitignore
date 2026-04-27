@@ -1,0 +1,22 @@
+# Lake / Lean build artifacts
+.lake/
+build/
+*.olean
+*.ilean
+*.trace
+lakefile.olean
+
+# Lean++ transpiler artifacts
+*.transpiled.lean
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

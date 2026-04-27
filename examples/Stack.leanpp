@@ -1,0 +1,42 @@
+-- Lean++ MVP example: a stack abstraction.
+-- Demonstrates: `model` (abstract spec, MVP = thin alias for `structure`)
+-- and `implementation IMPL refines MODEL by ...` (refinement obligation).
+--
+-- Phase 1 surface limitations: `model` bodies use the same fields-only
+-- shape as `concept` (no inline `law` keyword). The carrier type `rep`
+-- is an explicit parameter rather than a field, so `StackSpec α rep`
+-- lives at universe `Type` instead of `Type 1`. Phase 2 will lift this
+-- restriction with bundled-carrier models.
+
+#profile safe
+
+-- Abstract spec: a stack over element type `α` represented by `rep`.
+model StackSpec (α : Type) (rep : Type) where
+  empty     : rep
+  push      : α → rep → rep
+  pop       : rep → Option (α × rep)
+  pop_empty : pop empty = none
+
+-- Concrete implementation: stacks-as-lists over `Nat`.
+def listPop : List Nat → Option (Nat × List Nat)
+  | []      => none
+  | x :: xs => some (x, xs)
+
+def NatListStack : StackSpec Nat (List Nat) where
+  empty     := []
+  push x s  := x :: s
+  pop       := listPop
+  pop_empty := rfl
+
+-- Refinement claim. The MVP `Refines` stub class relates two TYPES,
+-- so we refine the rep `NatListStack` (= `List Nat`) by the spec type
+-- `NatListStackSpec` (= `StackSpec Nat (List Nat)`). The witness value
+-- `NatListStack` above is what makes the refinement hold; the MVP
+-- stub `trivialRefines` instance discharges the class membership.
+-- Real projects replace `Refines` with a project-specific simulation
+-- relation; the by-tactic block below is where that proof would go.
+abbrev NatStackRep      : Type := List Nat
+abbrev NatListStackSpec : Type := StackSpec Nat (List Nat)
+
+implementation NatStackRep refines NatListStackSpec by
+  exact inferInstance

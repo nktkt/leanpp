@@ -1,0 +1,31 @@
+-- Lean++ MVP example: algebraic concepts via `concept`.
+-- Demonstrates: `concept` declaration with mixed data + law fields, and
+-- an `instance` discharging each law.
+--
+-- A `concept` desugars to a Lean 4 `class` whose fields are both the
+-- operational data and the algebraic laws (closed Props). Phase 1 does
+-- not have an inline `law` keyword inside the body — every field is
+-- written as `name : type`. To tag a free-standing theorem as a law,
+-- use `@[law] theorem ...` (see below).
+
+#profile safe
+
+concept AdditiveGroup (α : Type) where
+  zero : α
+  add  : α → α → α
+  neg  : α → α
+  add_assoc      : ∀ a b c, add (add a b) c = add a (add b c)
+  zero_add       : ∀ a, add zero a = a
+  neg_add_cancel : ∀ a, add (neg a) a = zero
+
+-- A standalone law tagging an existing theorem (illustrative).
+-- Use the `@[law]` attribute defined by LeanPP.Trust.
+@[law] theorem Int.add_zero_right_law : ∀ a : Int, a + 0 = a := by intros; omega
+
+instance : AdditiveGroup Int where
+  zero := (0 : Int)
+  add  := (· + ·)
+  neg  := Neg.neg
+  add_assoc      := by intros; omega
+  zero_add       := by intros; omega
+  neg_add_cancel := by intros; omega
