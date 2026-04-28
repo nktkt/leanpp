@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.2] — 2026-04-29
+
+Patch release on top of v0.1.1: a missing-feature fix in `spec def`
+plus two CLI conveniences for state hygiene.
+
 ### Added
 
 - `spec def` now threads its `decreases EXPR` clause through to the
@@ -22,14 +29,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   With `--all`, also wipe `.lake/` and `build/`. Always reports what
   it touched.
 - `leanpp doctor`: diagnose missing tools / project state / LeanPP
-  reachability. Probes `lake env lean` with a `import LeanPP` test
-  to confirm the stdlib is on the search path. Exits non-zero on
-  any issue. Useful as a post-clone smoke check.
+  reachability. Probes `lake env lean` with an `import LeanPP` test
+  (and dereferences `LeanPP.Trust.obligationAttr`) to confirm the
+  stdlib is on the search path. Exits non-zero on any issue. Useful
+  as a post-clone smoke check.
 
 ### Tests
 
 - `tests/smoke_cli.sh` covers both new commands. Suite is now
   29 / 29 (11 elaboration + 18 CLI).
+
+[0.1.2]: https://github.com/nktkt/leanpp/releases/tag/v0.1.2
 
 ## [0.1.1] — 2026-04-28
 
@@ -208,5 +218,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.2...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
