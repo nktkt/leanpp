@@ -2,11 +2,11 @@
 -- Demonstrates the full Lean++ stack on a recursive data structure:
 --
 --   - `concept` for the abstract `Map` spec.
---   - An inductive carrier `BST` and ordinary `def`s for `find` /
---     `insert` (ordinary defs because we want the recursion checker
---     to see the structural decrease — the Phase 1 `spec def` macro
---     does not yet thread `termination_by` through to the generated
---     def, so we hand-author both sides here).
+--   - An inductive carrier `BST`.
+--   - `spec def` for both `find` and `insert`, with `decreases sizeOf t`
+--     threading well-founded recursion through the macro. (Earlier
+--     versions of this example used plain `def`s because `spec def`
+--     did not yet honour `decreases`; v0.1.2 shipped that fix.)
 --   - Several `@[law]`-tagged theorems: one proved, two left as
 --     `sorry`-backed obligations so `#laws` shows both states.
 --   - `#trust BST.find` / `#trust BST.insert` for per-decl ledgers.
@@ -32,21 +32,27 @@ namespace BST
 
 variable {α β : Type} [Ord α]
 
-def find (k : α) : BST α β → Option β
-  | .leaf            => none
-  | .node k' v lo hi =>
-      match Ord.compare k k' with
-      | .eq => some v
-      | .lt => find k lo
-      | .gt => find k hi
+spec def find (k : α) (t : BST α β) : Option β
+  decreases sizeOf t
+  :=
+    match t with
+    | .leaf            => none
+    | .node k' v lo hi =>
+        match Ord.compare k k' with
+        | .eq => some v
+        | .lt => find k lo
+        | .gt => find k hi
 
-def insert (k : α) (v : β) : BST α β → BST α β
-  | .leaf            => .node k v .leaf .leaf
-  | .node k' v' lo hi =>
-      match Ord.compare k k' with
-      | .eq => .node k' v lo hi
-      | .lt => .node k' v' (insert k v lo) hi
-      | .gt => .node k' v' lo (insert k v hi)
+spec def insert (k : α) (v : β) (t : BST α β) : BST α β
+  decreases sizeOf t
+  :=
+    match t with
+    | .leaf            => .node k v .leaf .leaf
+    | .node k' v' lo hi =>
+        match Ord.compare k k' with
+        | .eq => .node k' v lo hi
+        | .lt => .node k' v' (insert k v lo) hi
+        | .gt => .node k' v' lo (insert k v hi)
 
 end BST
 

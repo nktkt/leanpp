@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- `examples/BST.leanpp` migrates `find` and `insert` from plain `def`
+  to `spec def` with `decreases sizeOf t`. With v0.1.2's
+  `decreases`-to-`termination_by` threading the example now exercises
+  `spec def` on a recursive carrier — the original v0.1.1 version
+  hand-authored both the def and the spec separately because the
+  macro could not yet handle non-trivial recursion. Functionality
+  unchanged; the file shrinks by 8 lines and demonstrates an
+  end-to-end `spec def` use that wasn't possible before v0.1.2.
 
 ## [0.1.2] — 2026-04-29
 
