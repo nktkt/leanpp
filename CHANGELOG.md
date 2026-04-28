@@ -14,6 +14,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cutover and any future `leanprover/lean-action` releases. PRs are
   labelled `dependencies` + `github-actions` and use a `ci(deps)`
   commit prefix.
+- Dependabot already opened and merged its first PR — `actions/
+  checkout v4 → v6` — silencing the Node.js 20 deprecation
+  annotation that had appeared on every CI run since v0.1.1.
+
+### Fixed
+
+- CI workflow now sets `use-github-cache: false` on
+  `leanprover/lean-action@v1`. The action's cache key includes
+  `github.sha`, so every commit produced a brand-new cache entry
+  and the `actions/cache/save@v5` step failed against rate limits.
+  Lean++'s `lake build` runs in ~50s on cold cache so the cache
+  was saving little to begin with; opting out leaves the
+  annotations panel clean.
+- `LeanPP/Spec.lean`: `declUsesSorry`'s unused `env` parameter
+  renamed to `_env` to silence the linter. The argument is kept in
+  the signature for API symmetry with `declIsCurrentModule` (which
+  does need the env). `lake build` now produces zero warnings.
 
 ## [0.1.5] — 2026-04-29
 

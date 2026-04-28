@@ -202,8 +202,11 @@ def elabObligation : CommandElab := fun stx => do
 /-! ## #obligations -/
 
 /-- True for decls whose own definition uses `sorryAx`. Imports are filtered
-    by `#obligations` and `#laws` so the report focuses on user code. -/
-private def declUsesSorry (env : Environment) (c : ConstantInfo) : Bool :=
+    by `#obligations` and `#laws` so the report focuses on user code.
+    The `Environment` argument is kept in the signature for API symmetry
+    with `declIsCurrentModule` even though the predicate doesn't need
+    it; `_env` silences the unused-variable linter. -/
+private def declUsesSorry (_env : Environment) (c : ConstantInfo) : Bool :=
   match c.value? (allowOpaque := true) with
   | some e => e.hasSorry
   | none   => c.type.hasSorry
