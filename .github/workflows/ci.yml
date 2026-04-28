@@ -24,6 +24,12 @@ jobs:
           build: false
           test: false
           lint: false
+          # The action's GitHub cache step keys on `github.sha`, which
+          # makes every commit a fresh save and triggers a "Cache save
+          # failed" warning on every run. Lean++'s build finishes in
+          # ~50 s without cache; the savings aren't worth the noise,
+          # so disable until upstream changes the keying.
+          use-github-cache: false
 
       - name: lake build (LeanPP stdlib)
         run: lake build
