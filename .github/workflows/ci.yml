@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Lake build + test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lean toolchain
+        uses: leanprover/lean-action@v1
+        with:
+          # `lean-action` reads the version from `lean-toolchain` by default.
+          # Skip its built-in `lake build` so we can drive build + tests
+          # together via the project's regression script.
+          build: false
+          test: false
+          lint: false
+
+      - name: lake build (LeanPP stdlib)
+        run: lake build
+
+      - name: tests/run.sh (elaboration + CLI smoke)
+        run: bash tests/run.sh

@@ -1,5 +1,9 @@
 # Lean++
 
+[![CI](https://github.com/nktkt/leanpp/actions/workflows/ci.yml/badge.svg)](https://github.com/nktkt/leanpp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Lean 4](https://img.shields.io/badge/Lean-4.30-blue.svg)](https://lean-lang.org/)
+
 **Lean++ = Lean 4 + spec + automation + maintainability + verified SE + AI assistance, kernel-safe.**
 
 Lean++ is an upper-compatible proof-engineering layer on top of Lean 4.
