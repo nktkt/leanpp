@@ -125,12 +125,21 @@ def elabSpecDef : CommandElab := fun stx => do
         let post := enss[i]!
         let baseName := ns ++ Name.mkSimple s!"ensures_{i+1}"
         let thmName := mkIdent baseName
+        -- The proof first tries `auto`, then `auto` after `unfold $name`
+        -- so postconditions referring to the body of the just-defined
+        -- function (e.g. `result * d ≤ n` where `result = n / d`) can
+        -- close. If both fail, the obligation is left as a `sorry` and
+        -- surfaces in `#obligations` / `#trust`. Each branch ends in
+        -- `done` so a tactic that simplifies but does not close cannot
+        -- be accepted by `first` — without that, the macro would emit
+        -- "unsolved goals" errors instead of falling through to sorry.
         let thmCmd ← `(
           theorem $thmName $bs* (_h : $preTerm) :
               ($post) ($callExpr) := by
             first
-              | auto
-              | (intros; auto)
+              | (auto; done)
+              | (unfold $name:ident; auto; done)
+              | (intros; unfold $name:ident; auto; done)
               | sorry)
         try
           elabCommand thmCmd

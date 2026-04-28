@@ -95,8 +95,11 @@ Roughly in priority order — see `docs/ROADMAP.md` for the full plan.
   scan.
 - ~~Add a `#laws` command that lists every `@[law]`-tagged theorem.~~
   Shipped in `LeanPP.Spec`.
-- Improve `auto` portfolio (e.g. `Nat`-specific closers) without
-  pulling in Mathlib.
+- ~~Improve `auto` portfolio (e.g. `Nat`-specific closers) without
+  pulling in Mathlib.~~ Shipped: two-stage `auto` (bare + `intros`),
+  `leanpp_auto_simp_set` of Nat / Int facts, `apply And.intro <;>
+  auto_core` for conjunctions, and `unfold NAME` step in the
+  generated `spec def` proof.
 - ~~Better error messages from the transpiler when a `.leanpp` file
   has malformed `spec def` blocks.~~ Shipped: typo lint
   (`ensure`/`require`/etc.) and structural checks

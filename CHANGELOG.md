@@ -42,6 +42,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `specdef`, and `--strict` exit code). Suite is now 26 / 26 PASS
   (10 elaboration + 16 CLI).
 
+### Changed
+
+- `auto` is now a two-stage portfolio: an `auto_core` of cheap closers
+  (`rfl | assumption | contradiction | decide | omega | simp_all |
+  leanpp_auto_simp_set | trivial | apply And.intro <;> auto_core ;
+  done | exact Nat.zero_le _`) and a wrapper that retries `auto_core`
+  after `intros` so quantified ensures-clauses can close.
+  `leanpp_auto_simp_set` is a small Nat / Int simp lemma list
+  (`Nat.zero_le`, `Nat.le_refl`, `Nat.add_zero`, `Nat.zero_add`,
+  `Nat.div_le_self`, `Nat.mod_le`, `Nat.div_mul_le_self`,
+  `Int.natAbs_neg`).
+- `spec def`'s generated proof now tries `auto`, then `unfold NAME;
+  auto`, then `intros; unfold NAME; auto`, then `sorry`. Each branch
+  is wrapped in `(...; done)` so `first` cannot accept a branch that
+  simplifies the goal but leaves it open. This was a real bug: the
+  prior `first | auto | (intros; auto) | sorry` would silently swallow
+  partial progress and emit `unsolved goals` instead of falling
+  through to a `sorry`-backed obligation.
+
+### Fixed
+
+- The `safeDiv.ensures_1` postcondition in `examples/trust.leanpp`
+  (`result * d ≤ n` where `result = n / d`) now closes automatically
+  via `Nat.div_mul_le_self` after the spec macro inserts `unfold
+  safeDiv`. Sorry-warning count across the example suite drops from
+  10 to 9.
+
 ## [0.1.0-mvp] — 2026-04-28
 
 First public release. Implements the Phase 1 MVP scope from

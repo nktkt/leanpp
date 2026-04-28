@@ -14,12 +14,26 @@ namespace LeanPP
 
 open Lean Elab Tactic
 
-/-- `auto` — portfolio of core Lean 4 closers. Tries each in order and
-    succeeds with the first one that closes the goal. -/
-syntax (name := autoTac) "auto" : tactic
+/-- The set of safe Nat / Int simp lemmas the `auto` portfolio pulls in
+    via its `simp` fallback. Inlined as a syntax helper rather than a
+    `register_simp_attr` so applying it to existing core lemmas does
+    not need a separate compilation unit. Phase 2 will switch to a
+    `register_simp_attr leanpp_auto` user-extensible set. -/
+syntax "leanpp_auto_simp_set" : tactic
+macro_rules
+  | `(tactic| leanpp_auto_simp_set) =>
+      `(tactic| simp (config := { decide := true })
+                  [Nat.zero_le, Nat.le_refl, Nat.add_zero, Nat.zero_add,
+                   Nat.div_le_self, Nat.mod_le, Nat.div_mul_le_self,
+                   Int.natAbs_neg])
+
+/-- The portfolio of cheap closers, factored out so it can be reused
+    after a `try intros` step. Tries each in order; succeeds at the
+    first one that closes the goal. -/
+syntax (name := autoCoreTac) "auto_core" : tactic
 
 elab_rules : tactic
-  | `(tactic| auto) => do
+  | `(tactic| auto_core) => do
     evalTactic (← `(tactic|
       first
         | rfl
@@ -27,9 +41,27 @@ elab_rules : tactic
         | contradiction
         | decide
         | omega
-        | (simp_all; done)
-        | (simp; done)
-        | trivial))
+        | (simp_all (config := { decide := true }); done)
+        | (leanpp_auto_simp_set; done)
+        | trivial
+        -- `; done` is mandatory after `<;>` because the combinator can
+        -- leave subgoals open without erroring; without it `first` would
+        -- accept the partial state and downstream `sorry` fallback
+        -- would not fire, producing "unsolved goals" failures instead.
+        | (apply And.intro <;> auto_core; done)
+        | (exact Nat.zero_le _)))
+
+/-- `auto` — portfolio of core Lean 4 closers. Tries the bare-goal
+    portfolio first; if that fails, introduces any leading universals
+    / implications and retries. -/
+syntax (name := autoTac) "auto" : tactic
+
+elab_rules : tactic
+  | `(tactic| auto) => do
+    evalTactic (← `(tactic|
+      first
+        | auto_core
+        | (intros; auto_core)))
 
 /-- `auto?` — same as `auto` but never fails (turns failure into a no-op). -/
 syntax (name := autoTryTac) "auto?" : tactic
