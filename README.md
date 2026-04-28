@@ -77,6 +77,12 @@ the right version automatically).
 
 ## A taste
 
+A short tour of the surface language. Every block here is taken
+verbatim from `examples/`; running `bin/leanpp run examples/...`
+elaborates each one against the `LeanPP` stdlib.
+
+### `spec def` — function with a postcondition
+
 ```lean
 #profile safe
 
@@ -89,11 +95,57 @@ by
     auto
 ```
 
-The `spec def` block lowers to an ordinary `def abs` plus a
-`@[obligation] theorem abs.ensures_1` that is closed by the `auto`
-tactic portfolio (`rfl | assumption | contradiction | decide | omega |
-simp_all | simp | trivial`). The Lean kernel checks the resulting term
-the same way it checks any other proof.
+Lowers to `def abs` plus an `@[obligation] theorem abs.ensures_1`
+that the `auto` portfolio (`rfl | assumption | contradiction |
+decide | omega | simp_all | leanpp_auto_simp_set | trivial | ...`)
+closes automatically.
+
+### `concept` — abstract spec with multiple instances
+
+```lean
+concept Map (α : Type) (β : Type) (M : Type) where
+  empty   : M
+  find    : α → M → Option β
+  insert  : α → β → M → M
+```
+
+Two implementations of the same concept, side by side
+(`examples/BST.leanpp` + `examples/AssocMap.leanpp`), surface
+their proof-effort gap on the trust ledger:
+
+```
+examples/BST.leanpp        Laws: 3 total, 2 open
+examples/AssocMap.leanpp   Laws: 2 total, 0 open
+```
+
+### `proofplan` — declarative tactic combinator
+
+```lean
+proofplan group_normal
+  strategy:
+    normalize algebra
+    rewrite using [Int.add_assoc, Int.zero_add]
+    close by simp
+
+theorem demo (a b : Int) : a + 0 + b = a + b := by
+  group_normal
+```
+
+Lowers to a `macro` registration: `group_normal` becomes a
+first-class tactic name that expands to the planned sequence.
+
+### Diagnostics — `#trust`, `#laws`, `#obligations`
+
+```lean
+#trust safeDiv     -- focused per-decl trust ledger
+#laws              -- @[law]-tagged theorems with proved/open status
+#obligations       -- @[obligation]-tagged theorems with solved/unsolved status
+```
+
+Each command walks the elaborated environment and filters to the
+current module so imported decls don't pollute the report. With
+`#profile safe`, an `obligation` left as `sorry` blocks the build
+via `lake++ ci --safe-profile`.
 
 ## Trust ledger
 
