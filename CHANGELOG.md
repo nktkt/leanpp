@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `examples/insertSorted.leanpp` already had `decreases xs.length`
   in its surface form; with this fix it elaborates as well-founded
   rather than being silently discarded.
+- `leanpp clean`: remove `**/*.transpiled.lean` from cwd recursively.
+  With `--all`, also wipe `.lake/` and `build/`. Always reports what
+  it touched.
+- `leanpp doctor`: diagnose missing tools / project state / LeanPP
+  reachability. Probes `lake env lean` with a `import LeanPP` test
+  to confirm the stdlib is on the search path. Exits non-zero on
+  any issue. Useful as a post-clone smoke check.
+
+### Tests
+
+- `tests/smoke_cli.sh` covers both new commands. Suite is now
+  29 / 29 (11 elaboration + 18 CLI).
 
 ## [0.1.1] — 2026-04-28
 

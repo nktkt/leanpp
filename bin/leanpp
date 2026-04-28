@@ -373,6 +373,127 @@ def cmd_obligations(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_clean(args: argparse.Namespace) -> int:
+    """Remove transpiler artifacts. With `--all`, also remove lake build
+    state. Always reports what it touched, never silent."""
+    root = Path.cwd()
+    removed: list[Path] = []
+
+    # Always: every `*.transpiled.lean` from cwd recursively, except inside
+    # .lake / build (Lake handles those; we don't manage them here).
+    for path in sorted(root.rglob("*.transpiled.lean")):
+        if any(part in (".lake", "build", "__pycache__") for part in path.parts):
+            continue
+        try:
+            path.unlink()
+            removed.append(path)
+        except OSError as e:
+            print(f"leanpp clean: could not remove {path}: {e}", file=sys.stderr)
+
+    # `--all`: also wipe lake build state.
+    if args.all:
+        for d in (root / ".lake", root / "build"):
+            if d.exists():
+                import shutil
+                try:
+                    shutil.rmtree(d)
+                    removed.append(d)
+                except OSError as e:
+                    print(f"leanpp clean: could not remove {d}: {e}", file=sys.stderr)
+
+    if not removed:
+        print("leanpp clean: nothing to remove.")
+        return 0
+    print(f"leanpp clean: removed {len(removed)} item(s):")
+    for p in removed:
+        try:
+            rel = p.relative_to(root)
+        except ValueError:
+            rel = p
+        print(f"  {rel}")
+    return 0
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Diagnose common issues: missing toolchain, missing lakefile, LeanPP
+    import path, transpiler integrity. Prints a short report and exits
+    non-zero if any check fails."""
+    import shutil as _shutil
+    issues: list[str] = []
+    notes: list[str] = []
+
+    # 1. Tool detection.
+    lake = find_lake()
+    notes.append(f"lake:    {lake or '(not found)'}")
+    if lake is None:
+        issues.append("lake not found on PATH; install via elan or set $LAKE")
+
+    lean = _shutil.which("lean")
+    notes.append(f"lean:    {lean or '(not found)'}")
+    if lean is None:
+        issues.append("lean not found on PATH; elan should expose it from lean-toolchain")
+
+    # 2. Project state.
+    cwd = Path.cwd()
+    has_lakefile = (cwd / "lakefile.lean").exists() or (cwd / "lakefile.toml").exists()
+    notes.append(f"cwd:     {cwd}")
+    notes.append(f"lakefile: {'yes' if has_lakefile else 'no'}")
+    if not has_lakefile:
+        notes.append("  (run `leanpp new my-proj` to scaffold one)")
+
+    has_toolchain = (cwd / "lean-toolchain").exists()
+    notes.append(f"lean-toolchain: {'yes' if has_toolchain else 'no'}")
+
+    # 3. Transpiler integrity.
+    transpiler = Path(__file__).parent / "leanpp-transpile"
+    notes.append(f"leanpp-transpile: {'ok' if transpiler.exists() else '(missing)'}")
+    if not transpiler.exists():
+        issues.append("leanpp-transpile script not found next to leanpp")
+
+    # 4. LeanPP reachability — only meaningful if lake + lakefile are present.
+    if lake and has_lakefile:
+        import tempfile, subprocess
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".lean", delete=False, encoding="utf-8"
+        ) as tf:
+            tf.write("import LeanPP\n#check @LeanPP.Trust.obligationAttr\n")
+            probe = Path(tf.name)
+        try:
+            r = subprocess.run(
+                [lake, "env", "lean", str(probe)],
+                capture_output=True, text=True, timeout=30,
+            )
+            if r.returncode == 0:
+                notes.append("LeanPP import: ok")
+            else:
+                issues.append(
+                    "LeanPP import failed; ensure `require LeanPP` is in your lakefile.\n"
+                    f"    {(r.stderr or r.stdout).splitlines()[0] if (r.stderr or r.stdout).strip() else ''}"
+                )
+        except Exception as e:
+            issues.append(f"LeanPP import probe crashed: {e}")
+        finally:
+            try:
+                probe.unlink()
+            except OSError:
+                pass
+    else:
+        notes.append("LeanPP import: skipped (no lake / lakefile)")
+
+    # Print report.
+    print("leanpp doctor")
+    print("-" * 40)
+    for n in notes:
+        print(f"  {n}")
+    if not issues:
+        print("\nNo issues detected.")
+        return 0
+    print(f"\n{len(issues)} issue(s):")
+    for i in issues:
+        print(f"  - {i}")
+    return 1
+
+
 # ---------------------------------------------------------------------------
 # argparse plumbing
 # ---------------------------------------------------------------------------
@@ -433,6 +554,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional FILE.leanpp; without it, do a source scan",
     )
     p_o.set_defaults(func=cmd_obligations)
+
+    p_clean = sub.add_parser(
+        "clean",
+        help="Remove transpiler artifacts (*.transpiled.lean). With --all, also wipe lake build state.",
+    )
+    p_clean.add_argument(
+        "--all", action="store_true",
+        help="Also remove .lake/ and build/ directories.",
+    )
+    p_clean.set_defaults(func=cmd_clean)
+
+    p_doc = sub.add_parser(
+        "doctor",
+        help="Diagnose missing tools / project setup / LeanPP reachability.",
+    )
+    p_doc.set_defaults(func=cmd_doctor)
 
     return p
 

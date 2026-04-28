@@ -97,6 +97,15 @@ TMPNEW="$(mktemp -d)"
 rm -rf "$TMPNEW"
 
 echo
+echo "leanpp clean / doctor ..."
+# Generate one artifact so `clean` has something to remove.
+"$LEANPP" transpile examples/abs.leanpp > /dev/null 2>&1
+check "leanpp clean removes transpiled artifacts" "abs.transpiled.lean" \
+  "$LEANPP" clean
+check "leanpp doctor reports a healthy environment" "No issues detected" \
+  "$LEANPP" doctor
+
+echo
 echo "lake++ ..."
 check "lake++ --help / no-arg usage" "wrapper around lake" "$LAKEPP"
 check_exit_nonzero "lake++ ci --safe-profile fails on current tree (sorry > 0)" \
