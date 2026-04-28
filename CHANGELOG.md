@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `.github/dependabot.yml`: weekly grouped PRs for GitHub Actions
+  bumps. Avoids hand-tracking the `actions/checkout` Node.js 20→24
+  cutover and any future `leanprover/lean-action` releases. PRs are
+  labelled `dependencies` + `github-actions` and use a `ci(deps)`
+  commit prefix.
 
 ## [0.1.5] — 2026-04-29
 

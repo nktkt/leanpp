@@ -1,0 +1,29 @@
+# Automate version bumps for GitHub Actions used by .github/workflows/.
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+
+updates:
+  # Track GitHub Actions versions in our workflow files. Without this,
+  # the deprecation notice on `actions/checkout@v4` (Node.js 20 -> 24
+  # cutover in 2026-06-02) requires hand-bumping; with it, dependabot
+  # opens a PR as soon as a new compatible major is published.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "ci"
+      include: scope
+    # Group all action bumps into a single PR when possible to reduce
+    # review noise.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
