@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `spec def` now threads its `decreases EXPR` clause through to the
+  generated `def` as `termination_by EXPR`. The clause was already
+  parsed in v0.1.0-mvp but its value was dropped; now it actually
+  reaches Lean's well-founded-recursion checker. This unlocks
+  `spec def` for non-structural recursion (e.g. recursing on a
+  custom-ordered tree) where the user must supply a measure.
+  `examples/insertSorted.leanpp` already had `decreases xs.length`
+  in its surface form; with this fix it elaborates as well-founded
+  rather than being silently discarded.
 
 ## [0.1.1] — 2026-04-28
 

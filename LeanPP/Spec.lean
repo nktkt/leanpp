@@ -105,9 +105,17 @@ def elabSpecDef : CommandElab := fun stx => do
         spec def $name:ident $bs:bracketedBinder* : $ty:term
           $cls:leanpp_spec_clause*
           := $body:term) => do
-      let (reqs, enss, _decr?) ← partitionClauses cls
-      -- 1) Emit the underlying definition.
-      let defCmd ← `(def $name $bs* : $ty := $body)
+      let (reqs, enss, decr?) ← partitionClauses cls
+      -- 1) Emit the underlying definition. If a `decreases EXPR` clause
+      --    was supplied, forward it as a `termination_by` suffix so the
+      --    generated def can use well-founded recursion. This unlocks
+      --    `spec def` for non-structural recursion (e.g. recursing on a
+      --    custom-ordered tree) where the user must supply a decreasing
+      --    measure.
+      let defCmd ← match decr? with
+        | some d => `(def $name $bs* : $ty := $body
+                      termination_by $d)
+        | none   => `(def $name $bs* : $ty := $body)
       elabCommand defCmd
       -- 2) Build the call expression `name b1 b2 ...`.
       let argIdents ← binderArgIdents bs

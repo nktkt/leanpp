@@ -395,7 +395,7 @@ A user command backed by `LeanPP.Project.theoremIndex`.
 |------|-----|--------|
 | `requires P` | Precondition clause inside `spec def`. | MVP |
 | `ensures Q` | Postcondition clause; `result` bound. | MVP |
-| `decreases e` | Termination measure. | MVP |
+| `decreases e` | Termination measure; threaded as `termination_by e` into the generated `def`. | MVP |
 | `invariant I` | Loop/recursion invariant. | Phase 2 |
 | `modifies xs` | Frame condition for stateful code. | Phase 3 |
 | `by implementation E` | Body of a `spec def`. | MVP |
