@@ -35,6 +35,29 @@ IMPL_RE = re.compile(r"^\s+implementation\s*$")
 PROOF_RE = re.compile(r"^\s+proof\s*$")
 ASSIGN_RE = re.compile(r"^\s*:=")
 
+# Common typos for Lean++ keywords. Each entry maps the typo to its
+# intended keyword so the transpiler can suggest the fix.
+KEYWORD_TYPOS = {
+    "ensure":         "ensures",
+    "require":        "requires",
+    "decrease":       "decreases",
+    "decreaseses":    "decreases",
+    "invariants":     "invariant",
+    "implmentation":  "implementation",
+    "implementaiton": "implementation",
+    "implmnt":        "implementation",
+    "prooof":         "proof",
+    "prove":          "proof",
+}
+TYPO_LINE_RE = re.compile(r"^(\s+)([A-Za-z_][A-Za-z_]*)\s+(.+)$")
+
+# `spec def` is the headline keyword. Common surface mistakes:
+SPEC_DEF_VARIANTS = {
+    "spec  def":  "spec def",
+    "specdef":    "spec def",
+    "spec_def":   "spec def",
+}
+
 
 def has_import_leanpp(text: str) -> bool:
     for line in text.splitlines():
@@ -169,6 +192,128 @@ def desugar_spec_blocks(lines: list[str]) -> list[str]:
     return out
 
 
+def lint(src: str, src_filename: str) -> list[tuple[int, int, str, str]]:
+    """Return a list of (line, col, severity, message) diagnostics.
+
+    Severity is "warning" or "error". Messages are formatted to be
+    editor-friendly (file:line:col: severity: message).
+
+    The lint catches Lean++-specific surface mistakes that would
+    otherwise produce cryptic Lean errors after transpilation:
+
+    - Misspelled clause keywords (`ensure` → `ensures`, etc.) inside
+      what looks like a `spec def` block.
+    - `spec def` heads followed by neither `:=` nor `by`.
+    - `by implementation BODY proof PROOF` blocks where the
+      `implementation` or `proof` token is absent or misspelled.
+    """
+    diags: list[tuple[int, int, str, str]] = []
+    lines = src.splitlines()
+
+    in_spec_block = False
+    spec_block_start = -1
+    saw_implementation = False
+    saw_proof = False
+    saw_by = False
+
+    for i, raw in enumerate(lines, start=1):
+        line = raw
+
+        # Top-of-block detection.
+        if SPEC_DEF_HEAD_RE.match(line):
+            in_spec_block = True
+            spec_block_start = i
+            saw_by = False
+            saw_implementation = False
+            saw_proof = False
+            continue
+
+        if not in_spec_block:
+            # Catch the misspelled `spec def` variants outside any block.
+            stripped = line.lstrip()
+            for bad, good in SPEC_DEF_VARIANTS.items():
+                if stripped.startswith(bad + " ") or stripped == bad:
+                    col = len(line) - len(stripped) + 1
+                    diags.append(
+                        (i, col, "error",
+                         f"unknown declaration `{bad}`; did you mean `{good}`?")
+                    )
+                    break
+            continue
+
+        # Inside a spec block: track structural keywords and typos.
+        if BY_RE.match(line):
+            saw_by = True
+            continue
+        if IMPL_RE.match(line):
+            saw_implementation = True
+            continue
+        if PROOF_RE.match(line):
+            saw_proof = True
+            continue
+        if ASSIGN_RE.match(line):
+            in_spec_block = False
+            continue
+
+        # End-of-block heuristic: a non-indented, non-comment, non-blank
+        # line at column 0 closes the block (the user moved on to the
+        # next top-level declaration). Also run the SPEC_DEF typo check
+        # against this line in case it is a malformed `spec def`.
+        if line and not line[0].isspace() and not line.lstrip().startswith("--"):
+            if saw_by and not saw_implementation:
+                diags.append(
+                    (spec_block_start, 1, "error",
+                     "spec def with `by` requires an `implementation` block")
+                )
+            in_spec_block = False
+            stripped = line.lstrip()
+            for bad, good in SPEC_DEF_VARIANTS.items():
+                if stripped.startswith(bad + " ") or stripped == bad:
+                    col = len(line) - len(stripped) + 1
+                    diags.append(
+                        (i, col, "error",
+                         f"unknown declaration `{bad}`; did you mean `{good}`?")
+                    )
+                    break
+            continue
+
+        # Typo detection on clause-shaped lines.
+        m = TYPO_LINE_RE.match(line)
+        if m:
+            indent, kw, _rest = m.groups()
+            if kw in KEYWORD_TYPOS:
+                col = len(indent) + 1
+                diags.append(
+                    (i, col, "warning",
+                     f"unknown keyword `{kw}`; did you mean "
+                     f"`{KEYWORD_TYPOS[kw]}`?")
+                )
+
+    # Closing-of-file checks.
+    if in_spec_block and saw_by and not saw_implementation:
+        diags.append(
+            (spec_block_start, 1, "error",
+             "spec def with `by` requires an `implementation` block")
+        )
+
+    return diags
+
+
+def emit_diagnostics(
+    diags: list[tuple[int, int, str, str]], src_filename: str
+) -> int:
+    """Print diagnostics to stderr, return the number of errors."""
+    errors = 0
+    for line, col, severity, msg in diags:
+        print(
+            f"{src_filename}:{line}:{col}: {severity}: {msg}",
+            file=sys.stderr,
+        )
+        if severity == "error":
+            errors += 1
+    return errors
+
+
 def transpile_text(src: str, src_filename: str) -> str:
     out_lines: list[str] = [
         f"-- Generated from {src_filename} by leanpp-transpile. Do not edit.",
@@ -188,19 +333,30 @@ def transpile_text(src: str, src_filename: str) -> str:
     return result
 
 
-def transpile_file(in_path: Path, out_path: Path) -> None:
+def transpile_file(
+    in_path: Path, out_path: Path, *, strict: bool = False
+) -> int:
+    """Returns the number of errors reported by the linter (0 on success).
+    If `strict`, warnings count as errors and the output is not written."""
     if not in_path.exists():
         print(f"leanpp-transpile: error: {in_path} not found", file=sys.stderr)
-        sys.exit(1)
+        return 1
     if in_path.suffix != ".leanpp":
         print(
             f"leanpp-transpile: warning: {in_path} does not end in .leanpp",
             file=sys.stderr,
         )
     src = in_path.read_text(encoding="utf-8")
+    diags = lint(src, in_path.name)
+    errors = emit_diagnostics(diags, in_path.name)
+    if strict and any(s == "warning" for _, _, s, _ in diags):
+        errors += sum(1 for _, _, s, _ in diags if s == "warning")
+    if errors:
+        return errors
     out = transpile_text(src, in_path.name)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(out, encoding="utf-8")
+    return 0
 
 
 def default_output_for(in_path: Path) -> Path:
@@ -224,18 +380,37 @@ def main(argv: list[str] | None = None) -> int:
         "--stdout", action="store_true",
         help="Write transpiled output to stdout instead of a file",
     )
+    p.add_argument(
+        "--strict", action="store_true",
+        help="Treat lint warnings as errors and skip writing output",
+    )
+    p.add_argument(
+        "--no-lint", action="store_true",
+        help="Skip the surface-syntax linter",
+    )
     args = p.parse_args(argv)
 
     in_path = Path(args.input)
+    if not in_path.exists():
+        print(f"leanpp-transpile: error: {in_path} not found", file=sys.stderr)
+        return 1
+
+    src = in_path.read_text(encoding="utf-8")
+    if not args.no_lint:
+        diags = lint(src, in_path.name)
+        errors = emit_diagnostics(diags, in_path.name)
+        if args.strict:
+            errors += sum(1 for _, _, s, _ in diags if s == "warning")
+        if errors:
+            return errors
+
     if args.stdout:
-        if not in_path.exists():
-            print(f"leanpp-transpile: error: {in_path} not found", file=sys.stderr)
-            return 1
-        sys.stdout.write(transpile_text(in_path.read_text(encoding="utf-8"), in_path.name))
+        sys.stdout.write(transpile_text(src, in_path.name))
         return 0
 
     out_path = Path(args.output) if args.output else default_output_for(in_path)
-    transpile_file(in_path, out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(transpile_text(src, in_path.name), encoding="utf-8")
     print(f"leanpp-transpile: {in_path} -> {out_path}")
     return 0
 

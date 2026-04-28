@@ -26,8 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   *real* elaborated environment instead of grepping source. Without a
   file argument both commands keep their grep-based source-scan
   fallback for fast project-wide overview / lake-less environments.
-- `tests/smoke_cli.sh` now covers both code paths (4 → 13 → still all
-  PASS, suite total 23 / 23).
+- `bin/leanpp-transpile` now ships a surface-syntax linter:
+  - Catches misspelled clause keywords inside `spec def` bodies
+    (`ensure` → `ensures`, `require` → `requires`,
+    `decrease` → `decreases`, `implmentation` →
+    `implementation`, …) and emits editor-friendly diagnostics
+    `file.leanpp:LINE:COL: warning: ...`.
+  - Catches `specdef` / `spec_def` / `spec  def` (extra space) typos
+    at top level as errors.
+  - Errors when a `spec def ... by` block has no `implementation`
+    sub-block.
+  - `--strict` flag escalates warnings to errors and skips writing
+    output. `--no-lint` disables the check.
+- `tests/smoke_cli.sh` exercises the lint (catches `ensure`,
+  `specdef`, and `--strict` exit code). Suite is now 26 / 26 PASS
+  (10 elaboration + 16 CLI).
 
 ## [0.1.0-mvp] — 2026-04-28
 

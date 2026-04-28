@@ -97,8 +97,11 @@ Roughly in priority order — see `docs/ROADMAP.md` for the full plan.
   Shipped in `LeanPP.Spec`.
 - Improve `auto` portfolio (e.g. `Nat`-specific closers) without
   pulling in Mathlib.
-- Better error messages from the transpiler when a `.leanpp` file has
-  malformed `spec def` blocks.
+- ~~Better error messages from the transpiler when a `.leanpp` file
+  has malformed `spec def` blocks.~~ Shipped: typo lint
+  (`ensure`/`require`/etc.) and structural checks
+  (`spec def by` without `implementation`, `specdef` typos at top
+  level), plus a `--strict` flag to escalate.
 - More `.leanpp` examples covering common data structures (hashmap,
   AVL tree). Queue is shipped.
 

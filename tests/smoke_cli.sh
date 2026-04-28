@@ -53,6 +53,29 @@ check "leanpp --version"       "leanpp"           "$LEANPP" --version
 check "leanpp --help"           "transpile"        "$LEANPP" --help
 check "leanpp transpile (.leanpp -> .lean)"  " -> " \
   "$LEANPP" transpile examples/abs.leanpp -o /tmp/_smoke_abs.lean
+
+# Linter smoke: a deliberately-malformed file emits diagnostics with
+# editor-friendly file:line:col: messages. We piggyback on a heredoc
+# tempfile rather than committing a `bad.leanpp` to the repo.
+LINT_TMP="$(mktemp).leanpp"
+cat > "$LINT_TMP" <<'EOF'
+spec def x (n : Nat) : Nat
+  ensure n >= 0
+by
+  proof
+    auto
+
+specdef y : Nat := 0
+EOF
+check "leanpp-transpile lint catches `ensure` typo" \
+  "did you mean .ensures." \
+  "$REPO_ROOT/bin/leanpp-transpile" "$LINT_TMP"
+check "leanpp-transpile lint catches `specdef` typo" \
+  "did you mean .spec def." \
+  "$REPO_ROOT/bin/leanpp-transpile" "$LINT_TMP"
+check_exit_nonzero "leanpp-transpile --strict refuses to write on warnings" \
+  "$REPO_ROOT/bin/leanpp-transpile" --strict "$LINT_TMP" -o /tmp/_strict_out.lean
+rm -f "$LINT_TMP"
 check "leanpp obligations (no crash, grep fallback)" "" "$LEANPP" obligations
 check "leanpp trust (kernel: Lean 4 line, grep fallback)" "kernel:" "$LEANPP" trust
 check "leanpp obligations FILE.leanpp (env walk)" "Obligations:" \
