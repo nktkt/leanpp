@@ -97,6 +97,14 @@ TMPNEW="$(mktemp -d)"
 rm -rf "$TMPNEW"
 
 echo
+echo "leanpp run ..."
+check "leanpp run examples/abs.leanpp (transpile + elaborate)" \
+  "LeanPP profile set" \
+  "$LEANPP" run examples/abs.leanpp
+check_exit_nonzero "leanpp run on missing file exits non-zero" \
+  "$LEANPP" run /tmp/_nonexistent_smoke_file.leanpp
+
+echo
 echo "leanpp clean / doctor ..."
 # Generate one artifact so `clean` has something to remove.
 "$LEANPP" transpile examples/abs.leanpp > /dev/null 2>&1

@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `leanpp run FILE.leanpp`: transpile and elaborate a single
+  `.leanpp` file in one step. Equivalent to
+  `leanpp obligations FILE.leanpp` minus the auto-appended
+  diagnostic commands — useful when the file already contains its
+  own `#trust` / `#obligations` / `#laws` calls and you just want
+  to see them. The transpiled output goes to a tempfile and is
+  cleaned up on exit, so the source tree stays clean.
+- README quickstart now mentions `bin/leanpp run` alongside the
+  `leanpp new` / `leanpp build` flow.
+
+### Tests
+
+- `tests/smoke_cli.sh` exercises `leanpp run` (success path against
+  `examples/abs.leanpp`, non-zero exit on missing file). Suite is
+  20 CLI smoke tests; combined regression is 36 / 36.
 
 ## [0.1.4] — 2026-04-29
 

@@ -64,6 +64,10 @@ cd my-proj
 # Edit Main.leanpp, then build.
 leanpp build
 leanpp trust
+
+# Or, to try one of the bundled examples in this repo:
+bin/leanpp run examples/abs.leanpp
+bin/leanpp run examples/Queue.leanpp
 ```
 
 The CLI works without Lean for `new`, `transpile`, and `--help`.

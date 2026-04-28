@@ -373,6 +373,46 @@ def cmd_obligations(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_run(args: argparse.Namespace) -> int:
+    """Transpile a .leanpp file and elaborate it via `lake env lean`.
+    Stdout from any `#check` / `#trust` / `#obligations` / `#laws`
+    commands inside the file streams through to the parent. The
+    transpiled output is written to a tempfile and cleaned up on
+    exit, so the source tree stays clean.
+
+    This is the "just run it" entry point — equivalent to
+    `leanpp obligations FILE.leanpp` minus the auto-appended
+    diagnostic commands."""
+    in_path = Path(args.file)
+    if not in_path.exists():
+        print(f"leanpp run: {in_path} not found", file=sys.stderr)
+        return 1
+    if in_path.suffix != ".leanpp":
+        print(
+            f"leanpp run: warning: {in_path} does not end in .leanpp",
+            file=sys.stderr,
+        )
+    lake = find_lake()
+    if lake is None:
+        print("leanpp run: lake not found on PATH", file=sys.stderr)
+        return 1
+    import tempfile
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".lean", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        rc = run_transpiler(in_path, tmp_path)
+        if rc != 0:
+            return rc
+        return subprocess.call([lake, "env", "lean", str(tmp_path)])
+    finally:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+
+
 def cmd_clean(args: argparse.Namespace) -> int:
     """Remove transpiler artifacts. With `--all`, also remove lake build
     state. Always reports what it touched, never silent."""
@@ -541,6 +581,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="With FILE.leanpp: also run `#trust IDENT` for a focused entry",
     )
     p_t.set_defaults(func=cmd_trust)
+
+    p_run = sub.add_parser(
+        "run",
+        help="Transpile and elaborate a .leanpp file in one step.",
+    )
+    p_run.add_argument("file", help="Path to a .leanpp source file.")
+    p_run.set_defaults(func=cmd_run)
 
     p_o = sub.add_parser(
         "obligations",
