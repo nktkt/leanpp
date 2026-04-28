@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.5] — 2026-04-29
+
+UX patch release: a "just run it" CLI command and a README that
+actually advertises what's shipped.
+
 ### Added
 
 - `leanpp run FILE.leanpp`: transpile and elaborate a single
@@ -16,14 +23,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own `#trust` / `#obligations` / `#laws` calls and you just want
   to see them. The transpiled output goes to a tempfile and is
   cleaned up on exit, so the source tree stays clean.
-- README quickstart now mentions `bin/leanpp run` alongside the
-  `leanpp new` / `leanpp build` flow.
+- README "A taste" is no longer a single `spec def abs` block. It
+  is now a four-section tour (`spec def` / `concept` /
+  `proofplan` / diagnostics) quoting verbatim blocks from
+  `examples/*.leanpp` so each is reproducible via
+  `bin/leanpp run`. README quickstart also mentions
+  `bin/leanpp run`.
 
 ### Tests
 
 - `tests/smoke_cli.sh` exercises `leanpp run` (success path against
   `examples/abs.leanpp`, non-zero exit on missing file). Suite is
   20 CLI smoke tests; combined regression is 36 / 36.
+
+[0.1.5]: https://github.com/nktkt/leanpp/releases/tag/v0.1.5
 
 ## [0.1.4] — 2026-04-29
 
@@ -324,5 +337,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.5...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
