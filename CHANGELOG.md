@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.1] — 2026-04-28
+
+Post-MVP polish: CI infrastructure, surface-syntax linter, env-walk
+diagnostics, extended `auto`, two more examples, and an `unsolved`
+attribute synonym that resolves the `obligation`-as-keyword conflict.
+
 ### Added
 
+- GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs
+  `lake build` and `tests/run.sh` on every push and PR. Uses
+  `leanprover/lean-action@v1` to provision the toolchain pinned in
+  `lean-toolchain`.
+- README badges for CI, License, and Lean version.
+- `CONTRIBUTING.md` covering setup, repository layout, the four
+  non-negotiable rules, code style per language, and a prioritized
+  what-to-work-on list keyed against `docs/ROADMAP.md`.
 - `#laws` command (`LeanPP/Spec.lean`): enumerates every `@[law]`-tagged
   theorem in the current module, marked `[proved]` or `[open]` depending
   on whether it uses `sorryAx`. Mirrors the shape of `#obligations`.
@@ -76,9 +92,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `concept Map`, an `inductive BST`, ordinary recursive `def`s for
   `find` / `insert`, an `instance` discharging the concept, and
   three `@[law]` theorems (one proved, two open and dual-tagged
-  with `[«obligation»]`). Includes `#laws`, `#obligations`, and
+  `@[law, unsolved]`). Includes `#laws`, `#obligations`, and
   per-decl `#trust` calls. Test suite is now 11 elaboration + 16
   CLI smoke = 27 / 27.
+- `@[unsolved]` attribute synonym for `@[obligation]` (`LeanPP/Trust.lean`).
+  Both attributes are recognized by `#obligations`, the trust
+  ledger, and `bin/leanpp obligations`. The synonym exists because
+  `obligation` is also a top-level command keyword (`obligation
+  NAME : PROP`), and Lean's attribute parser refuses to parse it
+  inside an `@[...]` list without the `«obligation»` guillemet
+  escape. `unsolved` is a non-keyword alias that fits naturally,
+  e.g. `@[law, unsolved] theorem foo : ... := by sorry`.
+
+[0.1.1]: https://github.com/nktkt/leanpp/releases/tag/v0.1.1
 
 ## [0.1.0-mvp] — 2026-04-28
 
@@ -160,5 +186,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.0-mvp...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.1...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp

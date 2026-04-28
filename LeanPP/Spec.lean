@@ -217,7 +217,8 @@ def elabObligations : CommandElab := fun _ => do
   for (n, c) in env.constants.toList do
     if n.isInternal then continue
     if !declIsCurrentModule env n then continue
-    if LeanPP.Trust.obligationAttr.hasTag env n then
+    if LeanPP.Trust.obligationAttr.hasTag env n
+        || LeanPP.Trust.unsolvedAttr.hasTag env n then
       total := total + 1
       if declUsesSorry env c then
         unsolved := unsolved + 1

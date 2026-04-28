@@ -101,6 +101,13 @@ user code.
 theorems, marking each `[proved]` or `[open]`. Useful when surveying
 which algebraic properties an instance is on the hook for.
 
+`@[obligation]` and its synonym `@[unsolved]` are interchangeable.
+The synonym exists because `obligation` is also a top-level command
+keyword (`obligation NAME : PROP`), and Lean's attribute parser
+refuses to parse it inside `@[...]` lists without the `«obligation»`
+guillemet escape. `unsolved` is a non-keyword alias that fits
+naturally — e.g. `@[law, unsolved] theorem foo : ... := by sorry`.
+
 ### Lowering
 
 `obligation NAME : PROP` lowers to a registered metadata entry plus a

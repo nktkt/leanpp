@@ -34,10 +34,19 @@ def baselineAxioms : List Name :=
 /-! ### Attributes -/
 
 /-- A tag attribute marking a theorem as an unsolved verification obligation.
-    The CLI's `leanpp obligations` command scans for these. -/
+    The CLI's `leanpp obligations` command scans for these. The attribute
+    is registered under both `obligation` (matching the surface command
+    keyword) and `unsolved` (a non-keyword alias users can apply with
+    plain `@[unsolved]` or `@[law, unsolved]` — the keyword form would
+    require the `«obligation»` guillemet escape inside an attribute
+    list because `obligation` is also a top-level command keyword). -/
 initialize obligationAttr : TagAttribute ←
   registerTagAttribute `obligation
     "marks a theorem as a Lean++ verification obligation"
+
+initialize unsolvedAttr : TagAttribute ←
+  registerTagAttribute `unsolved
+    "alias of `@[obligation]` that avoids the command-keyword collision"
 
 /-- A tag attribute marking a theorem as a `concept` law. -/
 initialize lawAttr : TagAttribute ←
@@ -122,7 +131,7 @@ def snapshot : CoreM Snapshot := do
           snap := { snap with unsafeDecls := snap.unsafeDecls.push n }
         if Compiler.getImplementedBy? env n |>.isSome then
           snap := { snap with externDecls := snap.externDecls.push n }
-        if obligationAttr.hasTag env n then
+        if obligationAttr.hasTag env n || unsolvedAttr.hasTag env n then
           snap := { snap with obligations := snap.obligations.push n }
         if lawAttr.hasTag env n then
           snap := { snap with laws := snap.laws.push n }
@@ -208,7 +217,8 @@ def elabTrustTarget : CommandElab := fun stx => do
       let isExternDecl := isExtern env resolved
       let allAx := axiomsOf env resolved
       let extraAx := allAx.filter fun a => !baselineAxioms.contains a
-      let hasObligation := obligationAttr.hasTag env resolved
+      let hasObligation :=
+        obligationAttr.hasTag env resolved || unsolvedAttr.hasTag env resolved
       let hasLaw        := lawAttr.hasTag env resolved
       let prof := leanpp.profile.get (← getOptions)
       let parts : List String :=
