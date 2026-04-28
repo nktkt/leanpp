@@ -7,25 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.4] — 2026-04-29
+
+Test-infrastructure release. Adds three machine-checked stress
+test files that pin down macro and tactic behavior independently
+of the example suite, so a regression in `LeanPP.Auto`,
+`LeanPP.Spec`, or the `concept` / `model` / `obligation` /
+`@[law]` machinery surfaces as a clean elaboration failure
+instead of silently degrading example outcomes.
+
 ### Added
 
-- `tests/lean/AutoStress.lean`: machine-checked coverage of the
-  `auto` and `auto_core` tactic portfolio. One `example` per branch
-  (rfl, assumption, contradiction, decide, omega, simp_all,
-  `leanpp_auto_simp_set` lemmas, `And.intro` split,
-  `exact Nat.zero_le _`, `intros` + portfolio). 22 examples total.
-  `tests/run_all.sh` now elaborates every file under `tests/lean/`
-  in addition to `examples/*.leanpp` and `examples/*.expected.lean`,
-  so regressions in `LeanPP.Auto` cause a CI failure rather than
-  silently degrading example outcomes.
+- `tests/lean/AutoStress.lean`: 22 `example`s, one per branch of
+  the `auto` and `auto_core` tactic portfolio (rfl, assumption,
+  contradiction, decide, omega, simp_all, `leanpp_auto_simp_set`
+  lemmas, `And.intro` split, `exact Nat.zero_le _`, `intros` +
+  portfolio).
 - `tests/lean/SpecDefStress.lean`: eight `spec def` declarations
   spanning the surface forms used across the example suite —
   no-clauses, requires-only, ensures-only, requires + ensures,
   multiple ensures, `decreases` (well-founded recursion),
   `decreases` + `ensures`, and a typeclass-dependent binder. Each
   block `#check`s both the generated `def` and the
-  `@[obligation] theorem NAME.ensures_K`, so a lowering regression
-  in `LeanPP.Spec` produces an elaboration failure that CI catches.
+  `@[obligation] theorem NAME.ensures_K`.
+- `tests/lean/ConceptStress.lean`: nine blocks for the
+  non-`spec def` surface — `concept` (data + Prop fields), `model`
+  (structure alias), `obligation NAME : PROP`, `@[law]`,
+  `@[law, unsolved]` dual-tagging, `#trust IDENT`, `#obligations`,
+  `#laws`, and `implementation NAME refines NAME by tac`.
+- `tests/run_all.sh` now elaborates every file under `tests/lean/`
+  in addition to `examples/*.leanpp` and
+  `examples/*.expected.lean`. Suite total: 34 / 34 (16 elaboration
+  + 18 CLI smoke) covering ~50 individual machine-checked
+  assertions across stress tests and examples.
+
+[0.1.4]: https://github.com/nktkt/leanpp/releases/tag/v0.1.4
 
 ## [0.1.3] — 2026-04-29
 
@@ -290,5 +308,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.4...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
