@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.3] — 2026-04-29
+
+Patch release on top of v0.1.2: two new examples that exercise
+parts of the surface language not previously demonstrated, the
+`BST.leanpp` migration to use `spec def` end-to-end now that
+`decreases` is wired through, and a new "Known Phase 1 limitations"
+section in `CONTRIBUTING.md`.
+
 ### Added
 
 - `examples/Newton.leanpp`: integer log base 2 (`log2 n` recursing on
@@ -28,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Demonstrates the multi-instance story: the trust ledger surfaces
   the proof-effort difference between implementations of the same
   concept at-a-glance.
+- `CONTRIBUTING.md` gains a "Known Phase 1 limitations" section
+  documenting two MVP rough edges so contributors hit them with
+  context: `spec def` cannot live inside a `mutual ... end` block
+  (Lean 4's mutual grammar rejects arbitrary `command_elab`
+  declarations), and `decide` cannot reduce a well-founded
+  `spec def` body — use `native_decide` or `simp [NAME]; rfl`.
 
 ### Changed
 
@@ -39,6 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   macro could not yet handle non-trivial recursion. Functionality
   unchanged; the file shrinks by 8 lines and demonstrates an
   end-to-end `spec def` use that wasn't possible before v0.1.2.
+
+### Tests
+
+- 31 / 31 (13 elaboration + 18 CLI smoke). Two new elaboration
+  entries: `Newton.leanpp` and `AssocMap.leanpp`.
+
+[0.1.3]: https://github.com/nktkt/leanpp/releases/tag/v0.1.3
 
 ## [0.1.2] — 2026-04-29
 
@@ -249,5 +272,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.3...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
