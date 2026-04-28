@@ -86,16 +86,21 @@ Roughly in priority order — see `docs/ROADMAP.md` for the full plan.
 
 ### Phase 1 follow-ups (small, well-scoped)
 
-- Make `bin/leanpp obligations` invoke `#obligations` via `lake env
-  lean` instead of grepping `.lean` files.
-- Same for `bin/leanpp trust` (use `#trust`).
-- Add a `#laws` command that lists every `@[law]`-tagged theorem.
+- ~~Make `bin/leanpp obligations` invoke `#obligations` via `lake env
+  lean` instead of grepping `.lean` files.~~ Shipped: pass
+  `FILE.leanpp` as a positional arg to invoke the env-walk path
+  (`#obligations` + `#laws`); no-arg keeps the grep fallback.
+- ~~Same for `bin/leanpp trust` (use `#trust`).~~ Shipped: pass
+  `FILE.leanpp [--ident IDENT]` for env-walk; no-arg keeps the source
+  scan.
+- ~~Add a `#laws` command that lists every `@[law]`-tagged theorem.~~
+  Shipped in `LeanPP.Spec`.
 - Improve `auto` portfolio (e.g. `Nat`-specific closers) without
   pulling in Mathlib.
 - Better error messages from the transpiler when a `.leanpp` file has
   malformed `spec def` blocks.
-- More `.leanpp` examples covering common data structures (queue,
-  hashmap, AVL tree).
+- More `.leanpp` examples covering common data structures (hashmap,
+  AVL tree). Queue is shipped.
 
 ### Phase 2 (in `docs/ROADMAP.md`)
 

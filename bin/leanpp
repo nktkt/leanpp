@@ -248,26 +248,73 @@ def scan_lean_files(root: Path) -> dict:
     return counts
 
 
-def cmd_trust(args: argparse.Namespace) -> int:
-    target = args.target or Path.cwd().name
-    root = Path.cwd()
+def _run_with_appended_commands(
+    leanpp_file: Path, commands: list[str]
+) -> int:
+    """Transpile `leanpp_file` to a temp .lean, append the given Lean
+    commands, and run `lake env lean` on it from cwd. Stdout/stderr
+    stream through to the parent. Returns the lean exit code.
 
-    # If a project trust script exists, prefer it.
-    trust_script = root / "scripts" / "trust.lean"
-    if trust_script.exists():
-        lake = find_lake()
-        if lake is not None:
-            rc = subprocess.call([lake, "env", "lean", "--run", str(trust_script)])
+    This is the env-walk path: the appended `#trust` / `#obligations` /
+    `#laws` commands inspect the actual elaborated environment rather
+    than grepping source text. Requires a working lake (the user's
+    project must `require LeanPP` so the macros are in scope)."""
+    lake = find_lake()
+    if lake is None:
+        print(
+            "leanpp: lake not found on PATH; falling back to source scan",
+            file=sys.stderr,
+        )
+        return -1
+
+    import tempfile
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".lean", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        rc = run_transpiler(leanpp_file, tmp_path)
+        if rc != 0:
             return rc
+        with tmp_path.open("a", encoding="utf-8") as fh:
+            fh.write("\n-- leanpp CLI: appended diagnostic commands\n")
+            for c in commands:
+                fh.write(c + "\n")
+        return subprocess.call([lake, "env", "lean", str(tmp_path)])
+    finally:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
 
+
+def cmd_trust(args: argparse.Namespace) -> int:
+    target: str | None = args.target
+
+    # Env-walk path: target is a .leanpp file. Run `#trust` (and
+    # optionally `#trust IDENT`) against its elaborated environment.
+    if target and target.endswith(".leanpp"):
+        leanpp_file = Path(target)
+        if not leanpp_file.exists():
+            print(f"leanpp trust: {leanpp_file} not found", file=sys.stderr)
+            return 1
+        commands = ["#trust"]
+        if args.ident:
+            commands.append(f"#trust {args.ident}")
+        return _run_with_appended_commands(leanpp_file, commands)
+
+    # Source-scan fallback: walk every .lean / .leanpp file from cwd
+    # and print a grep-based summary. Useful when lake/elan is not
+    # installed or when we just want a fast project-wide overview.
+    root = Path.cwd()
     info = scan_lean_files(root)
     axioms = info["axioms"]
     n_unsolved = max(0, info["obligations_total"] - info["obligations_solved"])
     axiom_summary = ", ".join(axioms[:4]) if axioms else "Classical.choice, Quot.sound, propext"
     if len(axioms) > 4:
         axiom_summary += ", ..."
-
-    print(f"Trust Ledger: {target}")
+    label = target or root.name
+    print(f"Trust Ledger: {label}  (source scan; pass FILE.leanpp for env walk)")
     print(f"  kernel:    Lean 4 (unmodified)")
     print(f"  axioms:    {len(axioms) if axioms else 3} ({axiom_summary})")
     print(f"  sorry:     {info['sorry']}")
@@ -282,6 +329,18 @@ def cmd_trust(args: argparse.Namespace) -> int:
 
 
 def cmd_obligations(args: argparse.Namespace) -> int:
+    target: str | None = getattr(args, "file", None)
+
+    # Env-walk path: run `#obligations` (and `#laws`) against the
+    # elaborated env of one .leanpp file.
+    if target and target.endswith(".leanpp"):
+        leanpp_file = Path(target)
+        if not leanpp_file.exists():
+            print(f"leanpp obligations: {leanpp_file} not found", file=sys.stderr)
+            return 1
+        return _run_with_appended_commands(leanpp_file, ["#obligations", "#laws"])
+
+    # Source-scan fallback.
     root = Path.cwd()
     found: list[tuple[Path, int, str]] = []
     sorry_theorem = re.compile(
@@ -299,9 +358,11 @@ def cmd_obligations(args: argparse.Namespace) -> int:
             if sorry_theorem.search(line) or obligation_marker.search(line):
                 found.append((path, i, line.rstrip()))
     if not found:
-        print("leanpp obligations: no unsolved obligations found.")
+        print("leanpp obligations: no unsolved obligations found "
+              "(source scan; pass FILE.leanpp for env walk).")
         return 0
-    print(f"leanpp obligations: {len(found)} obligation(s):")
+    print(f"leanpp obligations: {len(found)} obligation(s) "
+          f"(source scan; pass FILE.leanpp for env walk):")
     for path, lineno, line in found:
         rel = path
         try:
@@ -343,11 +404,34 @@ def build_parser() -> argparse.ArgumentParser:
     p_b = sub.add_parser("build", help="transpile-all + lake build")
     p_b.set_defaults(func=cmd_build)
 
-    p_t = sub.add_parser("trust", help="Print a trust ledger for the project")
-    p_t.add_argument("target", nargs="?", default=None)
+    p_t = sub.add_parser(
+        "trust",
+        help=(
+            "Print a trust ledger. With no argument, source-scan cwd. "
+            "With FILE.leanpp, run the real `#trust` env walk via lake."
+        ),
+    )
+    p_t.add_argument(
+        "target", nargs="?", default=None,
+        help="Project label (source scan) or a FILE.leanpp (env walk)",
+    )
+    p_t.add_argument(
+        "--ident", default=None,
+        help="With FILE.leanpp: also run `#trust IDENT` for a focused entry",
+    )
     p_t.set_defaults(func=cmd_trust)
 
-    p_o = sub.add_parser("obligations", help="List unsolved obligations")
+    p_o = sub.add_parser(
+        "obligations",
+        help=(
+            "List unsolved obligations. With no argument, source-scan cwd. "
+            "With FILE.leanpp, run real `#obligations` + `#laws` via lake."
+        ),
+    )
+    p_o.add_argument(
+        "file", nargs="?", default=None,
+        help="Optional FILE.leanpp; without it, do a source scan",
+    )
     p_o.set_defaults(func=cmd_obligations)
 
     return p

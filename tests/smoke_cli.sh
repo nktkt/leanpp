@@ -53,8 +53,13 @@ check "leanpp --version"       "leanpp"           "$LEANPP" --version
 check "leanpp --help"           "transpile"        "$LEANPP" --help
 check "leanpp transpile (.leanpp -> .lean)"  " -> " \
   "$LEANPP" transpile examples/abs.leanpp -o /tmp/_smoke_abs.lean
-check "leanpp obligations (no crash)" "" "$LEANPP" obligations
-check "leanpp trust (kernel: Lean 4 line)" "kernel:" "$LEANPP" trust
+check "leanpp obligations (no crash, grep fallback)" "" "$LEANPP" obligations
+check "leanpp trust (kernel: Lean 4 line, grep fallback)" "kernel:" "$LEANPP" trust
+check "leanpp obligations FILE.leanpp (env walk)" "Obligations:" \
+  "$LEANPP" obligations examples/trust.leanpp
+check "leanpp trust FILE.leanpp --ident IDENT (env walk, focused)" \
+  "Trust Ledger: TwoListQ.empty" \
+  "$LEANPP" trust examples/Queue.leanpp --ident TwoListQ.empty
 
 echo
 echo "leanpp new ..."

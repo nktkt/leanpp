@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parameter, an `instance` discharging laws, `@[law]`-tagged free-
   standing theorems (one proved, one open), and `#laws` / `#trust IDENT`
   diagnostics in concert.
+- `bin/leanpp obligations FILE.leanpp` and
+  `bin/leanpp trust FILE.leanpp [--ident IDENT]`: env-walk path that
+  transpiles the file, appends `#obligations` / `#laws` / `#trust`
+  commands, and runs `lake env lean` so the diagnostics inspect the
+  *real* elaborated environment instead of grepping source. Without a
+  file argument both commands keep their grep-based source-scan
+  fallback for fast project-wide overview / lake-less environments.
+- `tests/smoke_cli.sh` now covers both code paths (4 → 13 → still all
+  PASS, suite total 23 / 23).
 
 ## [0.1.0-mvp] — 2026-04-28
 
