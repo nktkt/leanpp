@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `examples/Newton.leanpp`: integer log base 2 (`log2 n` recursing on
+  `n / 2`) elaborated via `spec def` with `decreases n`. The
+  decreasing measure is *load-bearing* — without it Lean rejects the
+  recursion, since `n / 2` is not a syntactic subterm of `n`. This
+  is the first MVP example that genuinely depends on v0.1.2's
+  `decreases`-to-`termination_by` threading; existing examples used
+  it for naturally-structural recursion where it was technically
+  redundant. `native_decide` is used to evaluate the def at sample
+  points (`log2 100 = 6`); plain `decide` cannot reduce well-founded
+  recursion at the elaborator level.
 - `examples/AssocMap.leanpp`: a second instance of the `Map` concept
   over `List (α × β)`. Counterpart to `BST.leanpp` — same abstract
   spec, different carrier. Both `find_empty` and `find_insert_eq`

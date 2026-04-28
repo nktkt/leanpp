@@ -1,0 +1,45 @@
+-- Lean++ MVP example: well-founded recursion via `spec def + decreases`
+-- on a measure that is *not* the structural decrease of a parameter.
+--
+-- `log2 n` recurses on `n / 2`. Lean cannot infer termination
+-- structurally because `n / 2` is not a syntactic subterm of `n`;
+-- the user must supply a measure. The `decreases n` clause threaded
+-- through to `termination_by n` (v0.1.2) makes this elaborate inside
+-- `spec def` instead of forcing a hand-written `def ... termination_by`.
+--
+-- Counterpoint to `BST.leanpp` (structural recursion on `t : BST`):
+-- there `decreases sizeOf t` is technically redundant but sets the
+-- pattern; here `decreases n` is *load-bearing* — without it Lean
+-- rejects the recursion.
+
+#profile research
+
+-- Integer log base 2: number of times you can halve `n` before
+-- hitting 0 or 1.
+spec def log2 (n : Nat) : Nat
+  decreases n
+  :=
+    if h : n ≤ 1 then
+      0
+    else
+      1 + log2 (n / 2)
+
+-- Sanity checks. `decide` does not reduce well-founded recursion at
+-- the elaborator level, so we use `native_decide` (which compiles
+-- the def to a native runtime) for runtime evaluation.
+example : log2 1   = 0 := by native_decide
+example : log2 2   = 1 := by native_decide
+example : log2 4   = 2 := by native_decide
+example : log2 8   = 3 := by native_decide
+example : log2 16  = 4 := by native_decide
+example : log2 100 = 6 := by native_decide
+
+-- A free-standing law: the result is always ≤ n. Proved via simp +
+-- the `auto` portfolio's induction on the recursion. (For MVP we
+-- mark it open and lean on `#laws` to surface it; Phase 2 will add
+-- well-founded induction to the auto portfolio.)
+@[law, unsolved] theorem log2_le_self (n : Nat) :
+    log2 n ≤ n := by sorry
+
+#laws         -- 1 law, [open]
+#trust log2   -- focused ledger: clean (the spec body is sorry-free)

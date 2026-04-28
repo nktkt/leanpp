@@ -109,6 +109,24 @@ Roughly in priority order — see `docs/ROADMAP.md` for the full plan.
   AVL tree). Queue and (unbalanced) BST are shipped; AVL / red-black
   balanced variants and a hashmap remain on the wishlist.
 
+### Known Phase 1 limitations
+
+These are documented for transparency; fixes belong in Phase 2.
+
+- `spec def` cannot live inside a `mutual ... end` block. Lean 4's
+  `mutual` block requires every element to be one of `inductive` /
+  `structure` / `def` / `theorem` / `abbrev` — arbitrary
+  `command_elab`-defined commands like `spec def` are rejected with
+  "invalid mutual block: either all elements ... must be inductive
+  ... or definitions/theorems/abbrevs". Workaround: write each side
+  as a plain `def` inside the `mutual` and add separate `theorem`
+  obligations afterwards. Phase 2 will need a custom mutual-block
+  command that recognizes `spec def`.
+- `decide` does not reduce a `spec def` body produced via `decreases`
+  / `termination_by`; Lean's well-founded recursion is opaque to the
+  elaborator. Workaround: use `native_decide` (compiles to native
+  runtime) or `simp [NAME]; ... ; rfl`. See `examples/Newton.leanpp`.
+
 ### Phase 2 (in `docs/ROADMAP.md`)
 
 - Inline `law` keyword inside `concept` / `model` bodies. Requires a
