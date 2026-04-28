@@ -19,6 +19,7 @@ canonical `abs` example.
 | simpleParser.leanpp | Option result, obligations, #obligations | PASS (sorry warning) |
 | trust.leanpp | #profile safe, #obligations, #trust | PASS (sorry warning) |
 | Stack.leanpp | model + implementation refines | PASS (0 warnings) |
+| Queue.leanpp | concept with carrier + impl + @[law] + #laws + #trust IDENT | PASS (sorry warning) |
 | concepts.leanpp | concept + @[law] + instance | PASS (0 warnings) |
 | proofplan.leanpp | proofplan combinator (named tactic alias) | PASS (0 warnings) |
 

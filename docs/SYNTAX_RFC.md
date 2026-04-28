@@ -73,15 +73,16 @@ def f (...) : T := E
 
 ---
 
-## 2. `obligation` and `#obligations`
+## 2. `obligation`, `#obligations`, and `#laws`
 
 ### Surface
 
 ```lean
 obligation abs_nonneg : ∀ x : Int, abs x ≥ 0
 
-#obligations         -- list all open obligations in the current env
+#obligations         -- enumerate every @[obligation] in the current module
 #obligations MyModule  -- Phase 2: scope to one namespace
+#laws                -- enumerate every @[law]-tagged theorem in the module
 ```
 
 ### Semantics
@@ -91,7 +92,14 @@ expected to hold. Until proved, it is recorded in the trust ledger as
 `open`. It is *not* an `axiom` — the kernel does not assume it. Code that
 *depends* on an open obligation is a build error in `safe` profile.
 
-`#obligations` queries open obligations — useful at the REPL or in CI.
+`#obligations` lists every `@[obligation]`-tagged decl in the current
+module with `[solved]` / `[unsolved]` status (a decl is unsolved if its
+body uses `sorryAx`). Imports are filtered out so the report focuses on
+user code.
+
+`#laws` mirrors the shape of `#obligations` for `@[law]`-tagged
+theorems, marking each `[proved]` or `[open]`. Useful when surveying
+which algebraic properties an instance is on the hook for.
 
 ### Lowering
 

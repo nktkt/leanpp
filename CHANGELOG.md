@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `#laws` command (`LeanPP/Spec.lean`): enumerates every `@[law]`-tagged
+  theorem in the current module, marked `[proved]` or `[open]` depending
+  on whether it uses `sorryAx`. Mirrors the shape of `#obligations`.
+- `#obligations` now filters to current-module decls (was scanning the
+  full env, including imports). `#laws` does the same.
+- `examples/Queue.leanpp`: FIFO queue concept with a two-list amortised
+  implementation. Demonstrates `concept` with explicit carrier
+  parameter, an `instance` discharging laws, `@[law]`-tagged free-
+  standing theorems (one proved, one open), and `#laws` / `#trust IDENT`
+  diagnostics in concert.
 
 ## [0.1.0-mvp] — 2026-04-28
 

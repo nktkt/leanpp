@@ -184,7 +184,19 @@ def elabObligation : CommandElab := fun stx => do
 
 /-! ## #obligations -/
 
-/-- `#obligations` — print every `@[obligation]`-tagged declaration. -/
+/-- True for decls whose own definition uses `sorryAx`. Imports are filtered
+    by `#obligations` and `#laws` so the report focuses on user code. -/
+private def declUsesSorry (env : Environment) (c : ConstantInfo) : Bool :=
+  match c.value? (allowOpaque := true) with
+  | some e => e.hasSorry
+  | none   => c.type.hasSorry
+
+/-- True for decls that originate in the *current* module (not imports). -/
+private def declIsCurrentModule (env : Environment) (n : Name) : Bool :=
+  env.getModuleIdxFor? n |>.isNone
+
+/-- `#obligations` — print every `@[obligation]`-tagged declaration in the
+    current module along with whether it is solved. -/
 syntax (name := obligationsCmd) "#obligations" : command
 
 @[command_elab obligationsCmd]
@@ -195,18 +207,44 @@ def elabObligations : CommandElab := fun _ => do
   let mut lines : Array String := #[]
   for (n, c) in env.constants.toList do
     if n.isInternal then continue
+    if !declIsCurrentModule env n then continue
     if LeanPP.Trust.obligationAttr.hasTag env n then
       total := total + 1
-      let isSorry :=
-        match c.value? (allowOpaque := true) with
-        | some e => e.hasSorry
-        | none   => c.type.hasSorry
-      if isSorry then
+      if declUsesSorry env c then
         unsolved := unsolved + 1
         lines := lines.push s!"  [unsolved] {n}"
       else
         lines := lines.push s!"  [solved]   {n}"
   let header := s!"Obligations: {total} total, {unsolved} unsolved"
+  if total == 0 then
+    logInfo header
+  else
+    logInfo (header ++ "\n" ++ String.intercalate "\n" lines.toList)
+
+/-! ## #laws -/
+
+/-- `#laws` — print every `@[law]`-tagged declaration in the current module
+    along with whether it is fully proved. Useful for surveying the algebraic
+    laws that a project's instances are expected to honour. -/
+syntax (name := lawsCmd) "#laws" : command
+
+@[command_elab lawsCmd]
+def elabLaws : CommandElab := fun _ => do
+  let env ← getEnv
+  let mut total := 0
+  let mut openLaws := 0
+  let mut lines : Array String := #[]
+  for (n, c) in env.constants.toList do
+    if n.isInternal then continue
+    if !declIsCurrentModule env n then continue
+    if LeanPP.Trust.lawAttr.hasTag env n then
+      total := total + 1
+      if declUsesSorry env c then
+        openLaws := openLaws + 1
+        lines := lines.push s!"  [open]   {n}"
+      else
+        lines := lines.push s!"  [proved] {n}"
+  let header := s!"Laws: {total} total, {openLaws} open"
   if total == 0 then
     logInfo header
   else

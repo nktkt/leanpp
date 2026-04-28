@@ -1,0 +1,68 @@
+-- Lean++ MVP example: a FIFO queue concept and a two-list implementation.
+-- Demonstrates:
+--   - `concept` with carrier data + propositional laws
+--   - an `instance` discharging each law
+--   - `@[law]` tagging on free-standing helper theorems
+--   - `#laws` and `#trust` diagnostics
+--
+-- The two-list implementation is the standard amortised queue: pushes go
+-- onto the rear list, pops come off the front list, and when the front
+-- runs out we reverse the rear into a new front. We prove just the basic
+-- empty / push / pop laws here; balance and amortisation are Phase 2.
+
+#profile research
+
+-- A FIFO queue over element type `α` with carrier `Q`.
+concept QueueOps (α : Type) (Q : Type) where
+  empty   : Q
+  push    : α → Q → Q
+  pop     : Q → Option (α × Q)
+  pop_empty : pop empty = none
+
+-- Two-list amortised queue: front list + rear list (reversed).
+structure TwoListQ (α : Type) where
+  front : List α
+  rear  : List α
+
+namespace TwoListQ
+
+def empty : TwoListQ α := ⟨[], []⟩
+
+def push (x : α) (q : TwoListQ α) : TwoListQ α :=
+  { q with rear := x :: q.rear }
+
+-- Pop pulls from the front list. If front is empty, reverse rear into
+-- front and try again.
+def pop : TwoListQ α → Option (α × TwoListQ α)
+  | ⟨[], []⟩          => none
+  | ⟨x :: xs, rear⟩   => some (x, ⟨xs, rear⟩)
+  | ⟨[], rear⟩        =>
+      match rear.reverse with
+      | []      => none
+      | y :: ys => some (y, ⟨ys, []⟩)
+
+theorem pop_empty : (pop (empty : TwoListQ α)) = none := rfl
+
+end TwoListQ
+
+instance : QueueOps α (TwoListQ α) where
+  empty     := TwoListQ.empty
+  push      := TwoListQ.push
+  pop       := TwoListQ.pop
+  pop_empty := TwoListQ.pop_empty
+
+-- A simple free-standing law: pushing onto an empty queue then popping
+-- returns the element. Proved.
+@[law] theorem TwoListQ.push_pop_empty (x : α) :
+    TwoListQ.pop (TwoListQ.push x TwoListQ.empty) = some (x, TwoListQ.empty) := by
+  simp [TwoListQ.push, TwoListQ.empty, TwoListQ.pop]
+
+-- An aspirational law about `push` not creating a `none` pop. Marked
+-- `sorry` and tagged `@[law]` so it shows up in `#laws` as `[open]`.
+-- Phase 2 will discharge this via a `proofplan` for two-list queues.
+@[law] theorem TwoListQ.push_pop_some (x : α) (q : TwoListQ α) :
+    (TwoListQ.push x q |>.pop).isSome := by sorry
+
+#laws                    -- enumerate every @[law] in this module
+#trust TwoListQ.empty    -- focused ledger: should be sorry-free
+#trust TwoListQ.pop      -- focused ledger: should be sorry-free
