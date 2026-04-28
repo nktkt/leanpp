@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `tests/lean/AutoStress.lean`: machine-checked coverage of the
+  `auto` and `auto_core` tactic portfolio. One `example` per branch
+  (rfl, assumption, contradiction, decide, omega, simp_all,
+  `leanpp_auto_simp_set` lemmas, `And.intro` split,
+  `exact Nat.zero_le _`, `intros` + portfolio). 22 examples total.
+  `tests/run_all.sh` now elaborates every file under `tests/lean/`
+  in addition to `examples/*.leanpp` and `examples/*.expected.lean`,
+  so regressions in `LeanPP.Auto` cause a CI failure rather than
+  silently degrading example outcomes.
 
 ## [0.1.3] — 2026-04-29
 

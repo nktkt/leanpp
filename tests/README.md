@@ -6,8 +6,8 @@ Two complementary suites that together cover the MVP surface end-to-end.
 
 | Script | What it covers |
 |--------|----------------|
-| `run_all.sh` | Builds the LeanPP stdlib via `lake build`, transpiles every `.leanpp` example, elaborates each generated `.lean` against the stdlib, and elaborates hand-written `*.expected.lean` reference files. Asserts zero `error:` lines. |
-| `smoke_cli.sh` | Exercises the user-facing CLI: `leanpp --version`, `--help`, `transpile`, `obligations`, `trust`, `new`; and `lake++` (no-arg usage, `ci --safe-profile`, stubs). |
+| `run_all.sh` | Builds the LeanPP stdlib via `lake build`, transpiles every `.leanpp` example, elaborates each generated `.lean` against the stdlib, elaborates hand-written `*.expected.lean` reference files, and elaborates every `tests/lean/*.lean` stress test. Asserts zero `error:` lines. |
+| `smoke_cli.sh` | Exercises the user-facing CLI: `leanpp --version`, `--help`, `transpile`, `obligations`, `trust`, `new`, `clean`, `doctor`, lint; and `lake++` (no-arg usage, `ci --safe-profile`, stubs). |
 
 `run.sh` runs both in sequence.
 
@@ -45,6 +45,17 @@ Elaborating hand-written *.expected.lean reference files...
 ```
 
 `smoke_cli.sh`: 11 checks covering both `leanpp` and `lake++`.
+
+## tests/lean/
+
+Lean 4 stress tests. Each file is a self-contained `import LeanPP`
+script of `example`s that exercise specific stdlib features.
+
+| File | Coverage |
+|------|----------|
+| `AutoStress.lean` | One `example` per branch of the `auto` portfolio: rfl, assumption, contradiction, decide, omega, simp_all, leanpp_auto_simp_set lemmas, And.intro split, Nat.zero_le, intros + portfolio. Catches regressions in `LeanPP.Auto`. |
+
+Add new files here when introducing a new tactic or surface form.
 
 ## Notes
 

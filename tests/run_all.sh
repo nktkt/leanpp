@@ -74,6 +74,13 @@ for f in examples/*.expected.lean; do
 done
 
 echo
+echo "Elaborating tests/lean/*.lean stress tests..."
+for f in tests/lean/*.lean; do
+  [ -e "$f" ] || continue
+  run_one "tests/lean/$(basename "$f")" "$f"
+done
+
+echo
 echo "=== Summary ==="
 echo "  passed: $pass"
 echo "  failed: $fail"
