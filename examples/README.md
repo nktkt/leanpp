@@ -20,7 +20,8 @@ canonical `abs` example.
 | trust.leanpp | #profile safe, #obligations, #trust | PASS (sorry warning) |
 | Stack.leanpp | model + implementation refines | PASS (0 warnings) |
 | Queue.leanpp | concept with carrier + impl + @[law] + #laws + #trust IDENT | PASS (sorry warning) |
-| BST.leanpp | inductive carrier + recursive find/insert + multi-attribute @[law, «obligation»] + #laws + #obligations | PASS (sorry warnings) |
+| BST.leanpp | inductive carrier + recursive find/insert + multi-attribute @[law, unsolved] + #laws + #obligations | PASS (sorry warnings) |
+| AssocMap.leanpp | second `Map` instance over `List (α × β)`; both `find_empty` and `find_insert_eq` close, contrasting BST's open laws | PASS (0 warnings) |
 | concepts.leanpp | concept + @[law] + instance | PASS (0 warnings) |
 | proofplan.leanpp | proofplan combinator (named tactic alias) | PASS (0 warnings) |
 

@@ -1,0 +1,74 @@
+-- Lean++ MVP example: an association-list-based Map.
+-- Counterpart to BST.leanpp: same `Map` concept, different carrier.
+-- Demonstrates that the `concept` mechanism cleanly accommodates
+-- multiple unrelated implementations of the same abstract spec.
+--
+-- The implementation is intentionally trivial — a `List (α × β)` with
+-- `List.lookup` for `find` and a head-prepend for `insert`. That makes
+-- the laws (find_empty, find_insert_eq) easy enough that `auto` /
+-- `simp` can close them, in contrast to BST where the same laws are
+-- left as open obligations because they need case-analysis on
+-- `Ord.compare`.
+--
+-- Net effect: this file proves *both* of `Map`'s headline laws,
+-- where BST.leanpp leaves them open. The trust ledger surfaces the
+-- difference at-a-glance.
+
+#profile research
+
+-- Re-declare the `Map` concept locally so the example is self-
+-- contained. In a real project the concept would live in a shared
+-- module both implementations import.
+concept Map (α : Type) (β : Type) (M : Type) where
+  empty   : M
+  find    : α → M → Option β
+  insert  : α → β → M → M
+
+-- The carrier: a thin wrapper around `List (α × β)`.
+structure AssocMap (α β : Type) where
+  pairs : List (α × β)
+  deriving Repr
+
+namespace AssocMap
+
+variable {α β : Type} [BEq α]
+
+def empty : AssocMap α β := ⟨[]⟩
+
+def find (k : α) : AssocMap α β → Option β
+  | ⟨pairs⟩ => pairs.lookup k
+
+def insert (k : α) (v : β) : AssocMap α β → AssocMap α β
+  | ⟨pairs⟩ => ⟨(k, v) :: pairs⟩
+
+end AssocMap
+
+-- Witness: AssocMap is a Map.
+instance [BEq α] : Map α β (AssocMap α β) where
+  empty  := AssocMap.empty
+  find   := AssocMap.find
+  insert := AssocMap.insert
+
+-- Free-standing laws ------------------------------------------------------
+
+-- Looking up any key in the empty map returns `none`. Closed by `auto`
+-- because `List.lookup _ [] = none` is a definitional equality.
+@[law] theorem AssocMap.find_empty {α β : Type} [BEq α] (k : α) :
+    AssocMap.find (β := β) k AssocMap.empty = none := by
+  unfold AssocMap.find AssocMap.empty
+  rfl
+
+-- Inserting and immediately looking up returns the value. Closed by
+-- `simp` once we unfold both ops; the head-prepend makes lookup hit
+-- the new pair on the first step.
+@[law] theorem AssocMap.find_insert_eq {α β : Type} [BEq α]
+    [LawfulBEq α] (k : α) (v : β) (m : AssocMap α β) :
+    AssocMap.find k (AssocMap.insert k v m) = some v := by
+  unfold AssocMap.find AssocMap.insert
+  simp [List.lookup]
+
+-- Diagnostics --------------------------------------------------------------
+
+#laws                  -- 2 laws, both [proved] (compare with BST.leanpp)
+#trust AssocMap.find   -- focused ledger: clean
+#trust AssocMap.insert -- focused ledger: clean

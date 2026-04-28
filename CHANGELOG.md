@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `examples/AssocMap.leanpp`: a second instance of the `Map` concept
+  over `List (α × β)`. Counterpart to `BST.leanpp` — same abstract
+  spec, different carrier. Both `find_empty` and `find_insert_eq`
+  close trivially via `unfold; rfl` and `simp [List.lookup]`
+  respectively, contrasting BST where the same laws are left as
+  open obligations because they need case analysis on `Ord.compare`.
+  Demonstrates the multi-instance story: the trust ledger surfaces
+  the proof-effort difference between implementations of the same
+  concept at-a-glance.
+
 ### Changed
 
 - `examples/BST.leanpp` migrates `find` and `insert` from plain `def`
