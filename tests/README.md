@@ -54,6 +54,7 @@ script of `example`s that exercise specific stdlib features.
 | File | Coverage |
 |------|----------|
 | `AutoStress.lean` | One `example` per branch of the `auto` portfolio: rfl, assumption, contradiction, decide, omega, simp_all, leanpp_auto_simp_set lemmas, And.intro split, Nat.zero_le, intros + portfolio. Catches regressions in `LeanPP.Auto`. |
+| `SpecDefStress.lean` | Eight `spec def` declarations covering the surface forms used across `examples/*.leanpp`: no clauses, requires only, ensures only, requires + ensures, multiple ensures, decreases, decreases + ensures, typeclass-dependent binder. Each block `#check`s both the generated `def` and the `@[obligation] theorem NAME.ensures_K` to fail elaboration on a regression in the macro's lowering. |
 
 Add new files here when introducing a new tactic or surface form.
 

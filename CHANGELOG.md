@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in addition to `examples/*.leanpp` and `examples/*.expected.lean`,
   so regressions in `LeanPP.Auto` cause a CI failure rather than
   silently degrading example outcomes.
+- `tests/lean/SpecDefStress.lean`: eight `spec def` declarations
+  spanning the surface forms used across the example suite —
+  no-clauses, requires-only, ensures-only, requires + ensures,
+  multiple ensures, `decreases` (well-founded recursion),
+  `decreases` + `ensures`, and a typeclass-dependent binder. Each
+  block `#check`s both the generated `def` and the
+  `@[obligation] theorem NAME.ensures_K`, so a lowering regression
+  in `LeanPP.Spec` produces an elaboration failure that CI catches.
 
 ## [0.1.3] — 2026-04-29
 
