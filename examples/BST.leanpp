@@ -1,0 +1,88 @@
+-- Lean++ MVP example: an unbalanced binary search tree as a `Map`.
+-- Demonstrates the full Lean++ stack on a recursive data structure:
+--
+--   - `concept` for the abstract `Map` spec.
+--   - An inductive carrier `BST` and ordinary `def`s for `find` /
+--     `insert` (ordinary defs because we want the recursion checker
+--     to see the structural decrease — the Phase 1 `spec def` macro
+--     does not yet thread `termination_by` through to the generated
+--     def, so we hand-author both sides here).
+--   - Several `@[law]`-tagged theorems: one proved, two left as
+--     `sorry`-backed obligations so `#laws` shows both states.
+--   - `#trust BST.find` / `#trust BST.insert` for per-decl ledgers.
+--
+-- The tree is unbalanced for clarity. AVL / red-black balancing is a
+-- Phase 2 example.
+
+#profile research
+
+-- Abstract Map concept.
+concept Map (α : Type) (β : Type) (M : Type) where
+  empty   : M
+  find    : α → M → Option β
+  insert  : α → β → M → M
+
+-- The tree.
+inductive BST (α β : Type) where
+  | leaf : BST α β
+  | node (k : α) (v : β) (lo hi : BST α β) : BST α β
+  deriving Repr
+
+namespace BST
+
+variable {α β : Type} [Ord α]
+
+def find (k : α) : BST α β → Option β
+  | .leaf            => none
+  | .node k' v lo hi =>
+      match Ord.compare k k' with
+      | .eq => some v
+      | .lt => find k lo
+      | .gt => find k hi
+
+def insert (k : α) (v : β) : BST α β → BST α β
+  | .leaf            => .node k v .leaf .leaf
+  | .node k' v' lo hi =>
+      match Ord.compare k k' with
+      | .eq => .node k' v lo hi
+      | .lt => .node k' v' (insert k v lo) hi
+      | .gt => .node k' v' lo (insert k v hi)
+
+end BST
+
+-- The instance witnesses that `BST α β` is a `Map` over `α`/`β`.
+instance [Ord α] : Map α β (BST α β) where
+  empty  := .leaf
+  find   := BST.find
+  insert := BST.insert
+
+-- Free-standing laws ------------------------------------------------------
+
+-- Looking up any key in the empty tree returns `none`. Closed by `auto`.
+@[law] theorem BST.find_empty {α β : Type} [Ord α] (k : α) :
+    BST.find (β := β) k .leaf = none := by
+  unfold BST.find
+  rfl
+
+-- The classic `Map` lookup-after-insert law. Discharging it requires
+-- case-analysis on `Ord.compare k k`, which is beyond the Phase 1
+-- `auto` portfolio; we mark it as both a `[law]` and an
+-- `[«obligation»]` and leave the body as `sorry` so it surfaces in
+-- `#laws` as `[open]` and `#obligations` as `[unsolved]`. The
+-- guillemet escape on `obligation` is needed because it is also a
+-- reserved command keyword.
+@[law, «obligation»] theorem BST.find_insert_eq {α β : Type} [Ord α]
+    (k : α) (v : β) (t : BST α β) :
+    BST.find k (BST.insert k v t) = some v := by sorry
+
+-- Inserting at a different key preserves the original lookup.
+@[law, «obligation»] theorem BST.find_insert_neq {α β : Type} [Ord α]
+    (k k' : α) (v : β) (t : BST α β) (h : k ≠ k') :
+    BST.find k (BST.insert k' v t) = BST.find k t := by sorry
+
+-- Diagnostics --------------------------------------------------------------
+
+#laws                  -- 3 laws: 1 proved, 2 open
+#obligations           -- 2 obligations, both unsolved
+#trust BST.find        -- focused ledger: clean
+#trust BST.insert      -- focused ledger: clean

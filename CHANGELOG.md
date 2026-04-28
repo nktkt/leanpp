@@ -69,6 +69,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   safeDiv`. Sorry-warning count across the example suite drops from
   10 to 9.
 
+### Examples
+
+- `examples/BST.leanpp`: an unbalanced binary search tree as a `Map`.
+  Demonstrates the full Lean++ stack on a recursive structure:
+  `concept Map`, an `inductive BST`, ordinary recursive `def`s for
+  `find` / `insert`, an `instance` discharging the concept, and
+  three `@[law]` theorems (one proved, two open and dual-tagged
+  with `[«obligation»]`). Includes `#laws`, `#obligations`, and
+  per-decl `#trust` calls. Test suite is now 11 elaboration + 16
+  CLI smoke = 27 / 27.
+
 ## [0.1.0-mvp] — 2026-04-28
 
 First public release. Implements the Phase 1 MVP scope from

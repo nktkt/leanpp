@@ -106,7 +106,8 @@ Roughly in priority order — see `docs/ROADMAP.md` for the full plan.
   (`spec def by` without `implementation`, `specdef` typos at top
   level), plus a `--strict` flag to escalate.
 - More `.leanpp` examples covering common data structures (hashmap,
-  AVL tree). Queue is shipped.
+  AVL tree). Queue and (unbalanced) BST are shipped; AVL / red-black
+  balanced variants and a hashmap remain on the wishlist.
 
 ### Phase 2 (in `docs/ROADMAP.md`)
 
