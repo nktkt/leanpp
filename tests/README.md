@@ -58,6 +58,7 @@ script of `example`s that exercise specific stdlib features.
 | `ConceptStress.lean` | Nine blocks for the non-`spec def` surface: `concept` (data + Prop fields), `model` (structure alias), `obligation NAME : PROP`, `@[law]`, `@[law, unsolved]` dual-tagging, `#trust IDENT`, `#obligations`, `#laws`, `implementation NAME refines NAME by tac`. Each `#check`s the generated entity name. |
 | `StdNatStress.lean` | 16 evaluations / lemma applications pinning `LeanPP.Std.Nat.log2` and `LeanPP.Std.Nat.divCeil` (plus `divCeil_zero` / `divCeil_one`). Catches regressions in the well-founded `log2` definition or the ceiling-division identities. |
 | `StdOptionStress.lean` | `#check` + sample applications of every `LeanPP.Std.Option` lemma (`isSome_of_eq_some`, `eq_none_of_not_isSome`, `bind_some_eq`, `bind_none_eq`, `map_id_eq`). |
+| `StdStringStress.lean` | Digit-table evaluations (`isDigit '5' = true`, `digitOf? '9' = some 9`, …) including the boundary characters `'/'` (just below `'0'`) and `':'` (just above `'9'`), plus `digitOf?_isDigit` / `digitOf?_none_iff` applications. |
 
 Add new files here when introducing a new tactic or surface form.
 

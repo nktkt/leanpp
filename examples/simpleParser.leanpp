@@ -1,16 +1,13 @@
 -- Lean++ MVP example: a tiny verified parser for natural-number literals.
 -- Demonstrates: `Option` result, `obligation` for unsolved round-trip property,
 -- and `#obligations` to enumerate what is still open.
+--
+-- `digitOf?` lives in `LeanPP.Std.String` (added in v0.1.7) along
+-- with `isDigit`, `digitOf?_isDigit`, and `digitOf?_none_iff`. We
+-- open the namespace below so the parser body can reference
+-- `digitOf?` unqualified.
 
-namespace LeanPP.Examples.SimpleParser
-
--- Single-digit decoder; returns none on a non-digit.
-def digitOf? (c : Char) : Option Nat :=
-  if '0' ≤ c ∧ c ≤ '9' then some (c.toNat - '0'.toNat) else none
-
-end LeanPP.Examples.SimpleParser
-
-open LeanPP.Examples.SimpleParser
+open LeanPP.Std.String
 
 spec def parseNat (s : String) : Option Nat
   ensures  ∀ n, result = some n → n.repr = s

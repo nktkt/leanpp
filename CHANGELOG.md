@@ -66,6 +66,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `map_id_eq : o.map id = o`
 - `tests/lean/StdOptionStress.lean`: per-lemma `#check` and a small
   sample of evaluations.
+- `LeanPP.Std.String`: char / string helpers needed by parser
+  specs. `examples/simpleParser.leanpp` had inlined `digitOf?`
+  since v0.1.0; v0.1.7 promotes it to the stdlib alongside two
+  correspondence lemmas.
+  - `isDigit c : Bool`
+  - `digitOf? c : Option Nat`
+  - `digitOf?_isDigit : digitOf? c = some d → isDigit c = true`
+  - `digitOf?_none_iff : digitOf? c = none ↔ isDigit c = false`
+- `tests/lean/StdStringStress.lean`: digit-table evaluations
+  (`isDigit '5' = true`, `digitOf? '9' = some 9`, …) plus
+  applications of the two lemmas. Covers boundary characters
+  `'/'` and `':'` to ensure the range bounds are tight.
 
 ## [0.1.6] — 2026-04-29
 
