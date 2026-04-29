@@ -48,6 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instance story is now end-to-end: one spec, two carriers, a
   single `Map`-typed function body could run against either
   instance.
+- `LeanPP.Std.Nat`: `Nat` helpers used by examples or commonly
+  needed in algorithms.
+  - `log2` (well-founded `n / 2` recursion).
+  - `divCeil n d` (ceiling division, `d = 0` ↦ 0).
+  - `divCeil_zero` / `divCeil_one` lemmas.
+- `tests/lean/StdNatStress.lean`: 16 machine-checked assertions
+  pinning `log2` / `divCeil` evaluation and the two lemma
+  signatures.
 
 ## [0.1.6] — 2026-04-29
 

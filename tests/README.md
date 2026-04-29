@@ -56,6 +56,7 @@ script of `example`s that exercise specific stdlib features.
 | `AutoStress.lean` | One `example` per branch of the `auto` portfolio: rfl, assumption, contradiction, decide, omega, simp_all, leanpp_auto_simp_set lemmas, And.intro split, Nat.zero_le, intros + portfolio. Catches regressions in `LeanPP.Auto`. |
 | `SpecDefStress.lean` | Eight `spec def` declarations covering the surface forms used across `examples/*.leanpp`: no clauses, requires only, ensures only, requires + ensures, multiple ensures, decreases, decreases + ensures, typeclass-dependent binder. Each block `#check`s both the generated `def` and the `@[obligation] theorem NAME.ensures_K` to fail elaboration on a regression in the macro's lowering. |
 | `ConceptStress.lean` | Nine blocks for the non-`spec def` surface: `concept` (data + Prop fields), `model` (structure alias), `obligation NAME : PROP`, `@[law]`, `@[law, unsolved]` dual-tagging, `#trust IDENT`, `#obligations`, `#laws`, `implementation NAME refines NAME by tac`. Each `#check`s the generated entity name. |
+| `StdNatStress.lean` | 16 evaluations / lemma applications pinning `LeanPP.Std.Nat.log2` and `LeanPP.Std.Nat.divCeil` (plus `divCeil_zero` / `divCeil_one`). Catches regressions in the well-founded `log2` definition or the ceiling-division identities. |
 
 Add new files here when introducing a new tactic or surface form.
 
