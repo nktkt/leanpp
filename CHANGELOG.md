@@ -26,6 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   / `Perm` definitions in favour of `open LeanPP.Std.List`. The
   example's surface contract is unchanged; this is a refactor that
   exercises the new library module.
+- `LeanPP.Std.List.Sorted` generalized from `Sorted : List Nat →
+  Prop` to `Sorted [LE α] : List α → Prop`. `Nat` instances flow
+  through the global `[LE Nat]` instance unchanged; `List Int`,
+  `List String`, etc. now work too.
+- `examples/binarySearch.leanpp` drops its inlined
+  `LeanPP.Examples.BinarySearch.Array.SortedAsc` definition in
+  favour of `open LeanPP.Std.Array`. Same surface contract,
+  3 fewer lines, shared library content.
+
+### Added (continued)
+
+- `LeanPP.Std.Array`: Mathlib-free `SortedAsc` predicate for
+  `Array`, generalized over `[LE α] [Inhabited α]`. Counterpart to
+  `LeanPP.Std.List` for random-access containers. `LeanPP.lean`
+  re-exports it.
 
 ## [0.1.6] — 2026-04-29
 

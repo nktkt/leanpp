@@ -26,10 +26,12 @@ namespace LeanPP.Std.List
 
 variable {α : Type}
 
-/-- A `List α` is `Sorted (≤)` if it's empty, a singleton, or each adjacent
-    pair satisfies `≤`. Specialized to `Nat` here to keep the example
-    surface concrete; Phase 2 will generalize over a `[LE α]` typeclass. -/
-inductive Sorted : List Nat → Prop
+/-- A `List α` is `Sorted` (under `[LE α]`) if it's empty, a singleton,
+    or each adjacent pair satisfies `≤`. Generalized in v0.1.7 from the
+    `Nat`-only definition that shipped in v0.1.6 — `Nat` instances now
+    flow through the global `[LE Nat]` instance, but `Sorted (xs : List
+    Int)` and `Sorted (xs : List String)` etc. work too. -/
+inductive Sorted [LE α] : List α → Prop
   | nil  : Sorted []
   | one  : ∀ x, Sorted [x]
   | cons : ∀ {x y ys}, x ≤ y → Sorted (y :: ys) → Sorted (x :: y :: ys)
