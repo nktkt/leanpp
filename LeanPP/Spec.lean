@@ -169,16 +169,36 @@ def elabSpecDef : CommandElab := fun stx => do
     free-standing theorem as a structural law, use `@[law] theorem ...`
     (the `law` attribute is registered in `LeanPP.Trust`). -/
 syntax (name := conceptCmd)
-  "concept" ident bracketedBinder* "where"
+  "concept" ident bracketedBinder*
+    (Lean.Parser.Command.«extends»)?
+    "where"
     Lean.Parser.Command.structFields : command
 
 @[command_elab conceptCmd]
 def elabConcept : CommandElab := fun stx => do
   match stx with
   | `(conceptCmd|
-        concept $cname:ident $bs:bracketedBinder* where
-          $fields:structFields) => do
-      let cmd ← `(class $cname $bs* where $fields:structFields)
+        concept $cname:ident $bs:bracketedBinder*
+          $[$ext?]?
+          where
+            $fields:structFields) => do
+      -- Splicing `$ext` into a `\`(class ...)` quotation hits two
+      -- snags: typed antiquotations like `$ext:«extends»` aren't
+      -- accepted at the macro-quote parser layer, and untyped `$ext`
+      -- ends up in the `bracketedBinder*` slot of `class` rather than
+      -- the dedicated `extends` slot. We sidestep both by stitching
+      -- the source text manually and re-parsing through Lean's
+      -- command parser.
+      let mut cmd : TSyntax `command :=
+        ← `(class $cname $bs* where $fields:structFields)
+      if let some ext := ext? then
+        let extText := (← liftCoreM <| Lean.PrettyPrinter.ppCategory `Lean.Parser.Command.«extends» ext.raw).pretty
+        let bsText  := (Lean.mkNullNode (bs.map (·.raw))).reprint.getD ""
+        let fieldsText := (← liftCoreM <| Lean.PrettyPrinter.ppCategory `Lean.Parser.Command.structFields fields.raw).pretty
+        let txt := s!"class {cname.getId} {bsText} {extText} where\n{fieldsText}"
+        match Lean.Parser.runParserCategory (← getEnv) `command txt with
+        | .ok stx' => cmd := ⟨stx'⟩
+        | .error e => throwError s!"leanpp.concept: failed to splice extends clause: {e}"
       elabCommand cmd
   | _ => throwUnsupportedSyntax
 

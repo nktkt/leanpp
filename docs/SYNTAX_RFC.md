@@ -215,13 +215,22 @@ macro that runs `first | simp | omega | decide | tauto`.
 
 ## 5. `concept` and `law`
 
-### Surface (MVP)
+### Surface (MVP + v0.1.8 `extends`)
 
 The MVP `concept` body uses Lean's standard `structFields` grammar; every
 field — data or proposition — is written as `name : type`. There is no
 inline `law` keyword inside the body (it would conflict with the
 column-sensitive parser used by Lean structure fields). To tag a
-free-standing theorem as a structural law, use the `@[law]` attribute:
+free-standing theorem as a structural law, use the `@[law]` attribute.
+
+v0.1.8 adds an optional `extends` clause matching Lean's standard
+`class extends` shape, enabling typeclass inheritance:
+
+```lean
+concept Monoid (α : Type) extends Magma α where
+  e : α
+  e_left : ∀ a, op e a = a
+```
 
 ```lean
 concept Monoid (α : Type) where

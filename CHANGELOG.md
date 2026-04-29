@@ -28,9 +28,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Three intermediate attempts at `MapLaws`-as-a-class are documented
   inline in `LeanPP/Std/MapLaws.lean` as the rationale for the
-  Prop choice. Phase 2 should extend `concept` with `extends` so
-  `MapLaws` can become a real typeclass that downstream code
-  requests via `[MapLaws α β M]`.
+  Prop choice. v0.1.8 closes that follow-up — see below.
+
+### Added (v0.1.8 follow-up)
+
+- **`concept extends`** — the `concept` macro in `LeanPP.Spec` now
+  accepts an optional `Lean.Parser.Command.«extends»` clause
+  between the bracketed binders and `where`. Use as
+  `concept Child (α : Type) extends Parent α where ...` — exactly
+  the same shape as Lean's standard `class extends`. Implementation
+  splices the source text through `Lean.Parser.runParserCategory`
+  because both typed and untyped antiquotation of the `«extends»`
+  syntax kind in a `\`(class ...)` quotation hit parser issues; the
+  string-detour costs one re-parse per `concept` declaration but
+  keeps the surface clean.
+- **`LeanPP.Std.MapLawsClass.MapLawsClass`** — first stdlib user
+  of `concept extends`. Same three lookup-after-insert laws as the
+  Prop `MapLaws` (which is kept for back-compat) but as a real
+  typeclass that inherits its `Map α β M` constraint via
+  `extends`. Downstream code can now write
+  `def f {M} [MapLawsClass α β M] (m : M) : ...` and have both the
+  ops and the laws synthesized in one constraint.
+- `tests/lean/StdMapLawsStress.lean` updated to exercise both
+  surfaces: the Prop's `refine ⟨?, ?, ?⟩` shape and the class's
+  `instance ... where toMap := ...; find_empty := ...; ...` shape.
 
 ## [0.1.7] — 2026-04-29
 
