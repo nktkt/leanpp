@@ -60,6 +60,7 @@ script of `example`s that exercise specific stdlib features.
 | `StdOptionStress.lean` | `#check` + sample applications of every `LeanPP.Std.Option` lemma (`isSome_of_eq_some`, `eq_none_of_not_isSome`, `bind_some_eq`, `bind_none_eq`, `map_id_eq`). |
 | `StdStringStress.lean` | Digit-table evaluations (`isDigit '5' = true`, `digitOf? '9' = some 9`, …) including the boundary characters `'/'` (just below `'0'`) and `':'` (just above `'9'`), plus `digitOf?_isDigit` / `digitOf?_none_iff` applications. |
 | `StdBoolStress.lean` | Forward + backward of `LeanPP.Std.Bool`'s four iff lemmas (`and_eq_true_iff`, `or_eq_true_iff`, `not_eq_true_iff`, `decide_iff_prop`). |
+| `StdMapLawsStress.lean` | Type-shape pinning of `LeanPP.Std.MapLaws` (signature `(α β M : Type) → [Map α β M] → Prop`) + a sorry-backed witness exercising the conjunction. |
 
 Add new files here when introducing a new tactic or surface form.
 

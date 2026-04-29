@@ -17,6 +17,7 @@ import LeanPP.Std.Nat
 import LeanPP.Std.Option
 import LeanPP.Std.String
 import LeanPP.Std.Bool
+import LeanPP.Std.MapLaws
 
 namespace LeanPP
 

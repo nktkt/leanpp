@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `LeanPP.Std.MapLaws`: companion Prop to `LeanPP.Std.Map` that
+  bundles the three lookup-after-insert laws (`find_empty`,
+  `find_insert_eq`, `find_insert_neq`) into one named statement.
+  Stated as a `Prop` conjunction rather than a `class` because
+  the v0.1.7 `concept` macro doesn't yet support `extends`-style
+  typeclass inheritance — `concept MapLaws ... [Map α β M] where
+  ...` left the law bodies unable to synthesize their `[Map]`
+  constraint. Defining `MapLaws` as a `def MapLaws ... : Prop`
+  with named-argument `Map.empty (α := α) (β := β) (M := M)` calls
+  threads the carrier explicitly and elaborates cleanly.
+- `tests/lean/StdMapLawsStress.lean`: pins the Prop's signature
+  (`(α β M : Type) → [Map α β M] → Prop`) and constructs a
+  sorry-backed witness so the statement shape is exercised
+  end-to-end.
+
+### Notes
+
+- Three intermediate attempts at `MapLaws`-as-a-class are documented
+  inline in `LeanPP/Std/MapLaws.lean` as the rationale for the
+  Prop choice. Phase 2 should extend `concept` with `extends` so
+  `MapLaws` can become a real typeclass that downstream code
+  requests via `[MapLaws α β M]`.
 
 ## [0.1.7] — 2026-04-29
 
