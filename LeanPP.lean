@@ -12,6 +12,7 @@ import LeanPP.Foreign
 import LeanPP.Project
 import LeanPP.Std.List
 import LeanPP.Std.Array
+import LeanPP.Std.Map
 
 namespace LeanPP
 

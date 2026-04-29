@@ -16,13 +16,12 @@
 
 #profile research
 
--- Re-declare the `Map` concept locally so the example is self-
--- contained. In a real project the concept would live in a shared
--- module both implementations import.
-concept Map (α : Type) (β : Type) (M : Type) where
-  empty   : M
-  find    : α → M → Option β
-  insert  : α → β → M → M
+-- The `Map` concept lives in the shared stdlib (`LeanPP.Std.Map`,
+-- added in v0.1.7). Both `BST.leanpp` and this file `open
+-- LeanPP.Std`, so they witness the *same* concept — the multi-
+-- instance story now uses one shared spec rather than two
+-- duplicated declarations.
+open LeanPP.Std
 
 -- The carrier: a thin wrapper around `List (α × β)`.
 structure AssocMap (α β : Type) where

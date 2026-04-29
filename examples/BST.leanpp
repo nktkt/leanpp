@@ -16,11 +16,11 @@
 
 #profile research
 
--- Abstract Map concept.
-concept Map (α : Type) (β : Type) (M : Type) where
-  empty   : M
-  find    : α → M → Option β
-  insert  : α → β → M → M
+-- The `Map` concept lives in the shared stdlib (`LeanPP.Std.Map`,
+-- added in v0.1.7). `examples/AssocMap.leanpp` opens the same
+-- namespace and provides a list-based instance, so the two
+-- implementations satisfy *the same* abstract spec.
+open LeanPP.Std
 
 -- The tree.
 inductive BST (α β : Type) where

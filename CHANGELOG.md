@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Array`, generalized over `[LE α] [Inhabited α]`. Counterpart to
   `LeanPP.Std.List` for random-access containers. `LeanPP.lean`
   re-exports it.
+- `LeanPP.Std.Map`: the abstract `concept Map (α β M : Type)` is
+  now a shared stdlib declaration, not a per-example redeclaration.
+  Both `examples/BST.leanpp` and `examples/AssocMap.leanpp`
+  `open LeanPP.Std` and witness the same concept, so the multi-
+  instance story is now end-to-end: one spec, two carriers, a
+  single `Map`-typed function body could run against either
+  instance.
 
 ## [0.1.6] — 2026-04-29
 
