@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.6] — 2026-04-29
+
+CI / build cleanliness pass: every annotation that had piled up
+since v0.1.1 is gone. CI is now a single green check with zero
+warnings; `lake build` is zero-warning too.
+
 ### Added
 
 - `.github/dependabot.yml`: weekly grouped PRs for GitHub Actions
@@ -14,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cutover and any future `leanprover/lean-action` releases. PRs are
   labelled `dependencies` + `github-actions` and use a `ci(deps)`
   commit prefix.
-- Dependabot already opened and merged its first PR — `actions/
+- Dependabot opened and merged its first PR end-to-end — `actions/
   checkout v4 → v6` — silencing the Node.js 20 deprecation
   annotation that had appeared on every CI run since v0.1.1.
 
@@ -31,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   renamed to `_env` to silence the linter. The argument is kept in
   the signature for API symmetry with `declIsCurrentModule` (which
   does need the env). `lake build` now produces zero warnings.
+
+[0.1.6]: https://github.com/nktkt/leanpp/releases/tag/v0.1.6
 
 ## [0.1.5] — 2026-04-29
 
@@ -360,5 +370,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.6...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
