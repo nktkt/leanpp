@@ -56,6 +56,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/lean/StdNatStress.lean`: 16 machine-checked assertions
   pinning `log2` / `divCeil` evaluation and the two lemma
   signatures.
+- `LeanPP.Std.Option`: `Option` helpers used by `BST.find`,
+  `AssocMap.find`, `Queue.pop`, `simpleParser.parseNat`, and
+  generally any spec that returns an optional value.
+  - `isSome_of_eq_some : o = some a → o.isSome = true`
+  - `eq_none_of_not_isSome : ¬ o.isSome → o = none`
+  - `bind_some_eq : (some a).bind f = f a`
+  - `bind_none_eq : (none).bind f = none`
+  - `map_id_eq : o.map id = o`
+- `tests/lean/StdOptionStress.lean`: per-lemma `#check` and a small
+  sample of evaluations.
 
 ## [0.1.6] — 2026-04-29
 

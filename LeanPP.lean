@@ -14,6 +14,7 @@ import LeanPP.Std.List
 import LeanPP.Std.Array
 import LeanPP.Std.Map
 import LeanPP.Std.Nat
+import LeanPP.Std.Option
 
 namespace LeanPP
 

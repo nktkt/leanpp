@@ -57,6 +57,7 @@ script of `example`s that exercise specific stdlib features.
 | `SpecDefStress.lean` | Eight `spec def` declarations covering the surface forms used across `examples/*.leanpp`: no clauses, requires only, ensures only, requires + ensures, multiple ensures, decreases, decreases + ensures, typeclass-dependent binder. Each block `#check`s both the generated `def` and the `@[obligation] theorem NAME.ensures_K` to fail elaboration on a regression in the macro's lowering. |
 | `ConceptStress.lean` | Nine blocks for the non-`spec def` surface: `concept` (data + Prop fields), `model` (structure alias), `obligation NAME : PROP`, `@[law]`, `@[law, unsolved]` dual-tagging, `#trust IDENT`, `#obligations`, `#laws`, `implementation NAME refines NAME by tac`. Each `#check`s the generated entity name. |
 | `StdNatStress.lean` | 16 evaluations / lemma applications pinning `LeanPP.Std.Nat.log2` and `LeanPP.Std.Nat.divCeil` (plus `divCeil_zero` / `divCeil_one`). Catches regressions in the well-founded `log2` definition or the ceiling-division identities. |
+| `StdOptionStress.lean` | `#check` + sample applications of every `LeanPP.Std.Option` lemma (`isSome_of_eq_some`, `eq_none_of_not_isSome`, `bind_some_eq`, `bind_none_eq`, `map_id_eq`). |
 
 Add new files here when introducing a new tactic or surface form.
 
