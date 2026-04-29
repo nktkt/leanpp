@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `LeanPP.Std.List`: Mathlib-free re-implementation of `List.Sorted`
+  (specialized to `Nat` for now) and `List.Perm` (polymorphic). These
+  used to be inlined verbatim in `examples/insertSorted.leanpp` and
+  any user file that wanted the same surface had to copy them. Now
+  they ship as a real library module under `LeanPP/Std/`. Opens via
+  `open LeanPP.Std.List`. `Perm.refl` is included as a helper that
+  the example needed but couldn't construct from Mathlib without
+  pulling in the dependency.
+- `LeanPP.lean` re-exports `LeanPP.Std.List`, so `import LeanPP`
+  alone is still enough.
+
+### Changed
+
+- `examples/insertSorted.leanpp` drops 12 lines of inlined `Sorted`
+  / `Perm` definitions in favour of `open LeanPP.Std.List`. The
+  example's surface contract is unchanged; this is a refactor that
+  exercises the new library module.
 
 ## [0.1.6] — 2026-04-29
 

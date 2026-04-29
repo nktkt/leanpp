@@ -10,6 +10,7 @@ import LeanPP.Spec
 import LeanPP.Refine
 import LeanPP.Foreign
 import LeanPP.Project
+import LeanPP.Std.List
 
 namespace LeanPP
 

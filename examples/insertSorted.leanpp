@@ -1,28 +1,12 @@
 -- Lean++ MVP example: sorted-list insertion.
 -- Demonstrates: multiple `ensures`, recursion, `decreases`, requires-clause.
 --
--- NOTE: `List.Sorted` and `List.Perm` live in Mathlib in upstream Lean 4.
--- To keep this example self-contained without a Mathlib dependency we inline
--- minimal local stubs. In Phase 2 these stubs can be deleted in favour of
--- the Mathlib definitions.
+-- `Sorted` and `Perm` come from `LeanPP.Std.List` (added in v0.1.7),
+-- which is the Mathlib-free re-implementation that ships with the
+-- LeanPP stdlib. Earlier versions of this example inlined the
+-- inductives locally; opening the namespace below pulls them in.
 
-namespace LeanPP.Examples.InsertSorted
-
--- Local stubs so the file is self-contained.
-inductive Sorted : List Nat → Prop
-  | nil  : Sorted []
-  | one  : ∀ x, Sorted [x]
-  | cons : ∀ {x y ys}, x ≤ y → Sorted (y :: ys) → Sorted (x :: y :: ys)
-
-inductive Perm : List Nat → List Nat → Prop
-  | nil   : Perm [] []
-  | cons  : ∀ x {xs ys}, Perm xs ys → Perm (x :: xs) (x :: ys)
-  | swap  : ∀ x y xs, Perm (x :: y :: xs) (y :: x :: xs)
-  | trans : ∀ {xs ys zs}, Perm xs ys → Perm ys zs → Perm xs zs
-
-end LeanPP.Examples.InsertSorted
-
-open LeanPP.Examples.InsertSorted
+open LeanPP.Std.List
 
 spec def insertSorted (x : Nat) (xs : List Nat) : List Nat
   requires Sorted xs
