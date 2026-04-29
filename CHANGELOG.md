@@ -78,6 +78,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`isDigit '5' = true`, `digitOf? '9' = some 9`, …) plus
   applications of the two lemmas. Covers boundary characters
   `'/'` and `':'` to ensure the range bounds are tight.
+- `LeanPP.Std.Bool`: thin re-statements of Lean-core Bool
+  identities collected so a single `open LeanPP.Std.Bool` covers
+  the cases that come up while unfolding `decide` predicates.
+  - `and_eq_true_iff : (a && b) = true ↔ a = true ∧ b = true`
+  - `or_eq_true_iff  : (a || b) = true ↔ a = true ∨ b = true`
+  - `not_eq_true_iff : (!a) = true ↔ a = false`
+  - `decide_iff_prop : decide P = true ↔ P`
+  Naming note: `decide_iff_prop` (rather than the more obvious
+  `decide_eq_true_eq`) avoids a Lean-core name collision; and
+  inside the test file, `decide` itself must be written
+  `Decidable.decide` because the bare token is reserved by the
+  tactic namespace in term position.
+- `tests/lean/StdBoolStress.lean`: forward + backward of every
+  exported lemma, with the term-position-`Decidable.decide`
+  workaround documented inline.
 
 ## [0.1.6] — 2026-04-29
 

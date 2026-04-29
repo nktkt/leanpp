@@ -16,6 +16,7 @@ import LeanPP.Std.Map
 import LeanPP.Std.Nat
 import LeanPP.Std.Option
 import LeanPP.Std.String
+import LeanPP.Std.Bool
 
 namespace LeanPP
 
