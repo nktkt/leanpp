@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.7] — 2026-04-29
+
+Stdlib-expansion release. The `LeanPP/Std/` directory grows from
+nothing to **seven modules** spanning the data-level helpers that
+`examples/*.leanpp` had been inlining. Four new `tests/lean/`
+stress files lock the module surfaces against regressions.
+
+After this release, no `examples/*.leanpp` file inlines a
+predicate or helper that recurs across the suite — every shared
+piece lives under `LeanPP.Std.*` and is `open`'d at use.
+
 ### Added
 
 - `LeanPP.Std.List`: Mathlib-free re-implementation of `List.Sorted`
@@ -93,6 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/lean/StdBoolStress.lean`: forward + backward of every
   exported lemma, with the term-position-`Decidable.decide`
   workaround documented inline.
+
+[0.1.7]: https://github.com/nktkt/leanpp/releases/tag/v0.1.7
 
 ## [0.1.6] — 2026-04-29
 
@@ -455,5 +470,5 @@ First public release. Implements the Phase 1 MVP scope from
 - VS Code source map / language server integration is not in this
   release.
 
-[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/nktkt/leanpp/compare/v0.1.7...HEAD
 [0.1.0-mvp]: https://github.com/nktkt/leanpp/releases/tag/v0.1.0-mvp
