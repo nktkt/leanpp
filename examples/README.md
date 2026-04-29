@@ -21,7 +21,7 @@ canonical `abs` example.
 | Stack.leanpp | model + implementation refines | PASS (0 warnings) |
 | Queue.leanpp | concept with carrier + impl + @[law] + #laws + #trust IDENT | PASS (sorry warning) |
 | BST.leanpp | inductive carrier + recursive find/insert + multi-attribute @[law, unsolved] + #laws + #obligations | PASS (sorry warnings) |
-| AssocMap.leanpp | second `Map` instance over `List (α × β)`; both `find_empty` and `find_insert_eq` close, contrasting BST's open laws | PASS (0 warnings) |
+| AssocMap.leanpp | second `Map` instance over `List (α × β)`; *all three* Map laws proved, plus the first `MapLawsClass` instance (v0.1.8) | PASS (0 warnings) |
 | Newton.leanpp | well-founded recursion via `spec def + decreases n` on a non-structural measure (`log2 n` recursing on `n / 2`); `native_decide` evaluates the def | PASS (sorry warning) |
 | concepts.leanpp | concept + @[law] + instance | PASS (0 warnings) |
 | proofplan.leanpp | proofplan combinator (named tactic alias) | PASS (0 warnings) |

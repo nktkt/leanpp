@@ -53,6 +53,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   surfaces: the Prop's `refine ⟨?, ?, ?⟩` shape and the class's
   `instance ... where toMap := ...; find_empty := ...; ...` shape.
 
+### Changed
+
+- `examples/AssocMap.leanpp` now proves **all three** Map laws.
+  `find_insert_neq` (previously `sorry`) closes via `cases h : k
+  == k'`: the `true` branch contradicts `k ≠ k'` through
+  `LawfulBEq.eq_of_beq`; the `false` branch is `rfl`. As a
+  consequence the file ships the **first stdlib-level
+  `MapLawsClass` instance** — backed by real proofs, not
+  sorry-stubs — so downstream code can ask for `[MapLawsClass α
+  β (AssocMap α β)]` and reach both ops and laws via the v0.1.8
+  typeclass.
+
 ## [0.1.7] — 2026-04-29
 
 Stdlib-expansion release. The `LeanPP/Std/` directory grows from

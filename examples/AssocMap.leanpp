@@ -4,15 +4,17 @@
 -- multiple unrelated implementations of the same abstract spec.
 --
 -- The implementation is intentionally trivial — a `List (α × β)` with
--- `List.lookup` for `find` and a head-prepend for `insert`. That makes
--- the laws (find_empty, find_insert_eq) easy enough that `auto` /
--- `simp` can close them, in contrast to BST where the same laws are
--- left as open obligations because they need case-analysis on
--- `Ord.compare`.
+-- `List.lookup` for `find` and a head-prepend for `insert`. That
+-- makes all three Map laws (find_empty, find_insert_eq,
+-- find_insert_neq) provable here without `sorry`, in contrast to
+-- BST where the same laws are left as open obligations because they
+-- need case-analysis on `Ord.compare`.
 --
--- Net effect: this file proves *both* of `Map`'s headline laws,
--- where BST.leanpp leaves them open. The trust ledger surfaces the
--- difference at-a-glance.
+-- Net effect: this file proves *all three* of `Map`'s headline laws
+-- and ships the first stdlib-level `MapLawsClass` instance — the
+-- v0.1.8 typeclass that bundles `Map` with its laws. Downstream
+-- code can ask for `[MapLawsClass α β (AssocMap α β)]` and have
+-- everything resolved.
 
 #profile research
 
@@ -66,8 +68,37 @@ instance [BEq α] : Map α β (AssocMap α β) where
   unfold AssocMap.find AssocMap.insert
   simp [List.lookup]
 
+-- Inserting at a different key preserves the original lookup.
+-- Proved (not sorry-backed!) thanks to `LawfulBEq` letting us derive
+-- a `False` from `k == k'` when we know `k ≠ k'`. AssocMap therefore
+-- satisfies all three Map laws — see the `MapLawsClass` instance
+-- below for the consolidated typeclass form.
+@[law] theorem AssocMap.find_insert_neq {α β : Type} [BEq α]
+    [LawfulBEq α] (k k' : α) (v : β) (m : AssocMap α β) (h : k ≠ k') :
+    AssocMap.find k (AssocMap.insert k' v m) = AssocMap.find k m := by
+  unfold AssocMap.find AssocMap.insert
+  cases m with
+  | mk pairs =>
+    simp [List.lookup]
+    cases hbeq : k == k' with
+    | true  => exact absurd (LawfulBEq.eq_of_beq hbeq) h
+    | false => rfl
+
+-- AssocMap satisfies the full `MapLawsClass` typeclass (v0.1.8): all
+-- three laws above are real proofs, not `sorry`-backed. Downstream
+-- code that requires `[MapLawsClass α β M]` can now ask for an
+-- AssocMap-keyed map and have both ops and laws synthesized via the
+-- typeclass, without re-proving anything.
+open LeanPP.Std.MapLawsClass in
+instance {α β : Type} [BEq α] [LawfulBEq α] :
+    MapLawsClass α β (AssocMap α β) where
+  toMap           := inferInstance
+  find_empty      := fun k => AssocMap.find_empty k
+  find_insert_eq  := AssocMap.find_insert_eq
+  find_insert_neq := fun k k' v m h => AssocMap.find_insert_neq k k' v m h
+
 -- Diagnostics --------------------------------------------------------------
 
-#laws                  -- 2 laws, both [proved] (compare with BST.leanpp)
+#laws                  -- 3 laws, all [proved] (compare with BST.leanpp)
 #trust AssocMap.find   -- focused ledger: clean
 #trust AssocMap.insert -- focused ledger: clean
